@@ -1,0 +1,26 @@
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      custom_tag:
+        type: string
+
+jobs:
+  Trigger-Release:
+    runs-on: self-hosted
+    steps:
+      - name: Repo | Checkout Codebase
+        uses: actions/checkout@v3
+      - name: Repo | Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          custom_tag: ${{ github.event.inputs.custom_tag }}
+          github_token: ${{ secrets.GHUB_TOKEN }}
+      - name: Repo | Create a release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.tag_version.outputs.new_tag }}
+          name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: ${{ steps.tag_version.outputs.changelog }}
+          token: ${{ secrets.GHUB_TOKEN }}
