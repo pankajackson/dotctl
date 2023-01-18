@@ -4,19 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "plasmasaver"
-version = "1.0.0"
+version = "x.x.x"
 authors = [
   { name="Pankaj Jackson", email="pankajackson@live.co.uk" },
 ]
-description = "A Command Line Interface to manage(save, export, import) KDE Plasma configs in form of profile."
+description = "Command Line Interface to manage(save, export, import) KDE Plasma settings/configs in form of profile."
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.7"
 dependencies=['PyYAML']
-keywords=['kde', 'plasma', 'save']
+keywords=['kde', 'plasma', 'config', 'setting', 'settings', 'save', 'saver']
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Development Status :: 1 - Planning",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Operating System :: Unix",

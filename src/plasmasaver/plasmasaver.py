@@ -10,6 +10,8 @@ import traceback
 from random import shuffle
 from zipfile import is_zipfile, ZipFile
 import argparse
+import pkg_resources
+
 
 try:
     import yaml
@@ -43,7 +45,7 @@ if not os.path.exists(base_profile_dir_path):
 
 list_of_profiles = os.listdir(base_profile_dir_path)
 length_of_lop = len(list_of_profiles)
-version = 0.1
+version = pkg_resources.get_distribution('plasmasaver').version
 
 conf_kde = {
     "export": {
