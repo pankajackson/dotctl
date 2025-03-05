@@ -20,22 +20,22 @@ except ModuleNotFoundError as error:
         "Please install the module PyYAML using pip: \n" "pip install PyYAML"
     ) from error
 
-config_dir = '.config'
-share_dir = '.local/share'
-root_share_dir = '/usr/share'
-bin_dir = '.local/bin'
-base_plasmasaver_dir = '.plasmasaver'
-base_profile_dir = 'profiles'
-sddm_dir = '/usr/share/sddm'
-system_config_dir = '/etc'
+config_dir = ".config"
+share_dir = ".local/share"
+root_share_dir = "/usr/share"
+bin_dir = ".local/bin"
+base_plasmasaver_dir = ".plasmasaver"
+base_profile_dir = "profiles"
+sddm_dir = "/usr/share/sddm"
+system_config_dir = "/etc"
 home_path = pwd.getpwuid(os.getuid()).pw_dir
 config_dir_path = os.path.join(home_path, config_dir)
 share_dir_path = os.path.join(home_path, share_dir)
 bin_dir_path = os.path.join(home_path, bin_dir)
 base_plasmasaver_dir_path = os.path.join(home_path, base_plasmasaver_dir)
 base_profile_dir_path = os.path.join(base_plasmasaver_dir_path, base_profile_dir)
-plasmasaver_config_file_path = os.path.join(base_plasmasaver_dir_path, 'conf.yaml')
-temp_path = os.path.join(base_plasmasaver_dir_path, 'tmp-%s' % time.time())
+plasmasaver_config_file_path = os.path.join(base_plasmasaver_dir_path, "conf.yaml")
+temp_path = os.path.join(base_plasmasaver_dir_path, "tmp-%s" % time.time())
 EXPORT_EXTENSION = ".plsv"
 sudo_pass = None
 skip_sudo = False
@@ -45,7 +45,7 @@ if not os.path.exists(base_profile_dir_path):
 
 list_of_profiles = os.listdir(base_profile_dir_path)
 length_of_lop = len(list_of_profiles)
-version = pkg_resources.get_distribution('plasmasaver').version
+version = pkg_resources.get_distribution("plasmasaver").version
 
 conf_kde = {
     "export": {
@@ -58,22 +58,12 @@ conf_kde = {
                 ".conky",
                 ".zsh",
                 ".bin",
-                "bin"
+                "bin",
             ],
-            "location": "$HOME/"
+            "location": "$HOME/",
         },
-        "plasma_saver": {
-            "entries": [
-                "profiles"
-            ],
-            "location": "$PLASMA_SAVER_DIR"
-        },
-        "sddm": {
-            "entries": [
-                "themes"
-            ],
-            "location": "$SDDM_DIR"
-        },
+        "plasma_saver": {"entries": ["profiles"], "location": "$PLASMA_SAVER_DIR"},
+        "sddm": {"entries": ["themes"], "location": "$SDDM_DIR"},
         "root_share_folder": {
             "entries": [
                 "plasma",
@@ -86,9 +76,9 @@ conf_kde = {
                 "icons",
                 "wallpapers",
                 "Kvantum",
-                "themes"
+                "themes",
             ],
-            "location": "$ROOT_SHARE_DIR"
+            "location": "$ROOT_SHARE_DIR",
         },
         "share_folder": {
             "entries": [
@@ -100,25 +90,16 @@ conf_kde = {
                 "color-schemes",
                 "aurorae",
                 "icons",
-                "wallpapers"
+                "wallpapers",
             ],
-            "location": "$SHARE_DIR"
-        }
+            "location": "$SHARE_DIR",
+        },
     },
     "save": {
-        "home_folder": {
-            "entries": [
-                ".zshrc",
-                ".p10k.zsh"
-            ],
-            "location": "$HOME/"
-        },
+        "home_folder": {"entries": [".zshrc", ".p10k.zsh"], "location": "$HOME/"},
         "app_layouts": {
-            "entries": [
-                "dolphin",
-                "konsole"
-            ],
-            "location": "$HOME/.local/share/kxmlgui5"
+            "entries": ["dolphin", "konsole"],
+            "location": "$HOME/.local/share/kxmlgui5",
         },
         "configs": {
             "entries": [
@@ -149,36 +130,20 @@ conf_kde = {
                 "lightlyrc",
                 "ksplashrc",
                 "khotkeysrc",
-                "autostart"
+                "autostart",
             ],
-            "location": "$CONFIG_DIR"
+            "location": "$CONFIG_DIR",
         },
-        "sddm_configs": {
-            "entries": [
-                "sddm.conf.d"
-            ],
-            "location": "$SYS_CONFIG_DIR"
-        }
-    }
+        "sddm_configs": {"entries": ["sddm.conf.d"], "location": "$SYS_CONFIG_DIR"},
+    },
 }
 
 conf_others = {
-    "save": {
-        "configs": {
-            "location": "$HOME/.config",
-            "entries": []
-        }
-    },
+    "save": {"configs": {"location": "$HOME/.config", "entries": []}},
     "export": {
-        "share_folder": {
-            "location": "$HOME/.local/share",
-            "entries": []
-        },
-        "home_folder": {
-            "location": "$HOME/",
-            "entries": []
-        }
-    }
+        "share_folder": {"location": "$HOME/.local/share", "entries": []},
+        "home_folder": {"location": "$HOME/", "entries": []},
+    },
 }
 
 
@@ -186,14 +151,14 @@ def conf_initializer(env="NONE"):
     if not os.path.exists(plasmasaver_config_file_path) or (env and (env != "NONE")):
         if os.path.expandvars("$XDG_CURRENT_DESKTOP") == "KDE" or env.upper() == "KDE":
             conf = conf_kde
-            with open(plasmasaver_config_file_path, 'w') as outfile:
+            with open(plasmasaver_config_file_path, "w") as outfile:
                 yaml.dump(conf, outfile, default_flow_style=False)
         else:
             print(
-                f"plasmasaver: Unknown Desktop environment, please use \"-e\"/\"--env\" to specify environment with \"save\" command to initialize base config."
+                f'plasmasaver: Unknown Desktop environment, please use "-e"/"--env" to specify environment with "save" command to initialize base config.'
             )
             conf = conf_others
-            with open(plasmasaver_config_file_path, 'w') as outfile:
+            with open(plasmasaver_config_file_path, "w") as outfile:
                 yaml.dump(conf, outfile, default_flow_style=False)
     return plasmasaver_config_file_path
 
@@ -223,7 +188,7 @@ def exception_handler(func):
 
 def ends_with(grouped_regex, path) -> str:
     occurrence = re.search(grouped_regex, path).group()
-    dirs = os.listdir(path[0: path.find(occurrence)])
+    dirs = os.listdir(path[0 : path.find(occurrence)])
     ends_with_text = re.search(grouped_regex, occurrence).group(2)
     for directory in dirs:
         if directory.endswith(ends_with_text):
@@ -233,7 +198,7 @@ def ends_with(grouped_regex, path) -> str:
 
 def begins_with(grouped_regex, path) -> str:
     occurrence = re.search(grouped_regex, path).group()
-    dirs = os.listdir(path[0: path.find(occurrence)])
+    dirs = os.listdir(path[0 : path.find(occurrence)])
     ends_with_text = re.search(grouped_regex, occurrence).group(2)
     for directory in dirs:
         if directory.startswith(ends_with_text):
@@ -304,12 +269,12 @@ def log(msg, *args, **kwargs):
 
 def get_sudo_pass(file, sudo_max_attempts=3):
     s_pass = None
-    print('Required sudo to process %s' % str(file))
-    print('Please select one option from list:')
-    print('     1. Provide sudo Password and apply to recurrence')
-    print('     2. Provide sudo Password and apply to current file')
-    print('     3. Skip all')
-    print('     4. Skip current file')
+    print("Required sudo to process %s" % str(file))
+    print("Please select one option from list:")
+    print("     1. Provide sudo Password and apply to recurrence")
+    print("     2. Provide sudo Password and apply to current file")
+    print("     3. Skip all")
+    print("     4. Skip current file")
     sudo_behaviour_status = int(input("Please provide your input [1/2/3/4]: "))
     if sudo_behaviour_status == 1 or sudo_behaviour_status == 2:
         s_pass = getpass.getpass("Please provide password: ")
@@ -326,9 +291,9 @@ def get_sudo_pass(file, sudo_max_attempts=3):
     elif sudo_behaviour_status == 4:
         return None
     else:
-        log('Error: bad input')
+        log("Error: bad input")
         if sudo_max_attempts > 0:
-            log('Error: Input limit exceed')
+            log("Error: Input limit exceed")
             return get_sudo_pass(file, sudo_max_attempts=sudo_max_attempts - 1)
         else:
             return None
@@ -344,14 +309,18 @@ def copy(source, dest):
         try:
             os.makedirs(dest)
         except PermissionError:
-            command = 'mkdir -p %s' % dest
+            command = "mkdir -p %s" % dest
             if sudo_pass:
-                subprocess.check_output('echo %s|sudo -S %s; echo $? ' % (sudo_pass, command), shell=True)
+                subprocess.check_output(
+                    "echo %s|sudo -S %s; echo $? " % (sudo_pass, command), shell=True
+                )
             elif skip_sudo:
                 pass
             else:
                 temp_pass = get_sudo_pass(dest)
-                subprocess.check_output('echo %s|sudo -S %s; echo $? ' % (temp_pass, command), shell=True)
+                subprocess.check_output(
+                    "echo %s|sudo -S %s; echo $? " % (temp_pass, command), shell=True
+                )
 
     for item in os.listdir(source):
         source_path = os.path.join(source, item)
@@ -364,27 +333,39 @@ def copy(source, dest):
                 try:
                     os.remove(dest_path)
                 except PermissionError:
-                    command = 'rm -rf %s' % dest_path
+                    command = "rm -rf %s" % dest_path
                     if sudo_pass:
-                        subprocess.check_output('echo %s|sudo -S %s; echo $? ' % (sudo_pass, command), shell=True)
+                        subprocess.check_output(
+                            "echo %s|sudo -S %s; echo $? " % (sudo_pass, command),
+                            shell=True,
+                        )
                     elif skip_sudo:
                         pass
                     else:
                         temp_pass = get_sudo_pass(dest_path)
-                        subprocess.check_output('echo %s|sudo -S %s; echo $? ' % (temp_pass, command), shell=True)
+                        subprocess.check_output(
+                            "echo %s|sudo -S %s; echo $? " % (temp_pass, command),
+                            shell=True,
+                        )
 
             if os.path.exists(source_path):
                 try:
                     shutil.copy(source_path, dest)
                 except PermissionError:
-                    command = 'cp %s %s' % (source_path, dest)
+                    command = "cp %s %s" % (source_path, dest)
                     if sudo_pass:
-                        subprocess.check_output('echo %s|sudo -S %s; echo $? ' % (sudo_pass, command), shell=True)
+                        subprocess.check_output(
+                            "echo %s|sudo -S %s; echo $? " % (sudo_pass, command),
+                            shell=True,
+                        )
                     elif skip_sudo:
                         pass
                     else:
                         temp_pass = get_sudo_pass(dest)
-                        subprocess.check_output('echo %s|sudo -S %s; echo $? ' % (temp_pass, command), shell=True)
+                        subprocess.check_output(
+                            "echo %s|sudo -S %s; echo $? " % (temp_pass, command),
+                            shell=True,
+                        )
 
 
 @exception_handler
@@ -400,7 +381,9 @@ def read_plasmasaver_config(config_file=plasmasaver_config_file_path) -> dict:
 @exception_handler
 def list_profiles(profile_list, profile_count):
     # assert
-    assert os.path.exists(base_profile_dir_path) and profile_count != 0, "No profile found."
+    assert (
+        os.path.exists(base_profile_dir_path) and profile_count != 0
+    ), "No profile found."
 
     # run
     print("Plasmasaver profiles:")
@@ -410,7 +393,14 @@ def list_profiles(profile_list, profile_count):
 
 
 @exception_handler
-def save_profile(name, profile_list, force=False, include_global=False, include_sddm=False, sddm_only=False):
+def save_profile(
+    name,
+    profile_list,
+    force=False,
+    include_global=False,
+    include_sddm=False,
+    sddm_only=False,
+):
     # assert
     assert name not in profile_list or force, "Profile with this name already exists"
 
@@ -418,26 +408,30 @@ def save_profile(name, profile_list, force=False, include_global=False, include_
     log("saving profile...")
     profile_dir = os.path.join(base_profile_dir_path, name)
     mkdir(profile_dir)
-    with open(plasmasaver_config_file_path, 'r') as configs:
+    with open(plasmasaver_config_file_path, "r") as configs:
         plasmasaver_config = yaml.safe_load(configs)
         if sddm_only:
-            plasmasaver_config['export'] = {'sddm': plasmasaver_config['export']['sddm']}
-            plasmasaver_config['save'] = {'sddm_configs': plasmasaver_config['save']['sddm_configs']}
+            plasmasaver_config["export"] = {
+                "sddm": plasmasaver_config["export"]["sddm"]
+            }
+            plasmasaver_config["save"] = {
+                "sddm_configs": plasmasaver_config["save"]["sddm_configs"]
+            }
         else:
             if not include_global:
-                plasmasaver_config['export'].pop('root_share_folder', None)
+                plasmasaver_config["export"].pop("root_share_folder", None)
             if not include_sddm:
-                plasmasaver_config['export'].pop('sddm', None)
-                plasmasaver_config['save'].pop('sddm_configs', None)
+                plasmasaver_config["export"].pop("sddm", None)
+                plasmasaver_config["save"].pop("sddm_configs", None)
 
-        with open(os.path.join(profile_dir, 'conf.yaml'), 'w') as outfile:
+        with open(os.path.join(profile_dir, "conf.yaml"), "w") as outfile:
             yaml.dump(plasmasaver_config, outfile, default_flow_style=False)
-    plasmasaver_config = read_plasmasaver_config(os.path.join(profile_dir, 'conf.yaml'))
-    for section in plasmasaver_config['save']:
-        location = plasmasaver_config['save'][section]["location"]
+    plasmasaver_config = read_plasmasaver_config(os.path.join(profile_dir, "conf.yaml"))
+    for section in plasmasaver_config["save"]:
+        location = plasmasaver_config["save"][section]["location"]
         folder = os.path.join(profile_dir, section)
         mkdir(folder)
-        for entry in plasmasaver_config['save'][section]["entries"]:
+        for entry in plasmasaver_config["save"][section]["entries"]:
             source = os.path.join(location, entry)
             dest = os.path.join(folder, entry)
             if os.path.exists(source):
@@ -450,7 +444,14 @@ def save_profile(name, profile_list, force=False, include_global=False, include_
 
 
 @exception_handler
-def apply_profile(profile_name, profile_list, profile_count, skip_sddm=False, skip_global=False, sddm_only=False):
+def apply_profile(
+    profile_name,
+    profile_list,
+    profile_count,
+    skip_sddm=False,
+    skip_global=False,
+    sddm_only=False,
+):
     # assert
     assert profile_count != 0, "No profile saved yet."
     assert profile_name in profile_list, "Profile not found :("
@@ -463,14 +464,16 @@ def apply_profile(profile_name, profile_list, profile_count, skip_sddm=False, sk
     config_location = os.path.join(profile_dir, "conf.yaml")
     profile_config = read_plasmasaver_config(config_location)
     if sddm_only:
-        profile_config['export'] = {'sddm': profile_config['export']['sddm']}
-        profile_config['save'] = {'sddm_configs': profile_config['save']['sddm_configs']}
+        profile_config["export"] = {"sddm": profile_config["export"]["sddm"]}
+        profile_config["save"] = {
+            "sddm_configs": profile_config["save"]["sddm_configs"]
+        }
     else:
         if skip_global:
-            profile_config['export'].pop('root_share_folder', None)
+            profile_config["export"].pop("root_share_folder", None)
         if skip_sddm:
-            profile_config['export'].pop('sddm', None)
-            profile_config['save'].pop('sddm_configs', None)
+            profile_config["export"].pop("sddm", None)
+            profile_config["save"].pop("sddm_configs", None)
     for name in profile_config["save"]:
         location = os.path.join(profile_dir, name)
         copy(location, profile_config["save"][name]["location"])
@@ -493,8 +496,16 @@ def remove_profile(profile_name, profile_list, profile_count):
 
 
 @exception_handler
-def export(profile_name, profile_list, profile_count, skip_global=False, skip_sddm=False, sddm_only=False,
-           config_only=False, data_only=False):
+def export(
+    profile_name,
+    profile_list,
+    profile_count,
+    skip_global=False,
+    skip_sddm=False,
+    sddm_only=False,
+    config_only=False,
+    data_only=False,
+):
     # assert
     assert profile_count != 0, "No profile saved yet."
     assert profile_name in profile_list, "Profile not found."
@@ -513,23 +524,27 @@ def export(profile_name, profile_list, profile_count, skip_global=False, skip_sd
     log("Exporting profile. It might take a minute or two...")
 
     profile_config_file = os.path.join(profile_dir, "conf.yaml")
-    with open(profile_config_file, 'r') as configs:
+    with open(profile_config_file, "r") as configs:
         plasmasaver_config = yaml.safe_load(configs)
 
         if skip_global:
-            plasmasaver_config['export'].pop('root_share_folder', None)
+            plasmasaver_config["export"].pop("root_share_folder", None)
         if data_only:
-            plasmasaver_config.pop('save', None)
+            plasmasaver_config.pop("save", None)
         if config_only:
-            plasmasaver_config.pop('export', None)
+            plasmasaver_config.pop("export", None)
         if skip_sddm:
-            plasmasaver_config['export'].pop('sddm', None)
-            plasmasaver_config['save'].pop('sddm_configs', None)
+            plasmasaver_config["export"].pop("sddm", None)
+            plasmasaver_config["save"].pop("sddm_configs", None)
         if sddm_only:
-            plasmasaver_config['export'] = {'sddm': plasmasaver_config['export']['sddm']}
-            plasmasaver_config['save'] = {'sddm_configs': plasmasaver_config['save']['sddm_configs']}
+            plasmasaver_config["export"] = {
+                "sddm": plasmasaver_config["export"]["sddm"]
+            }
+            plasmasaver_config["save"] = {
+                "sddm_configs": plasmasaver_config["save"]["sddm_configs"]
+            }
 
-        with open(os.path.join(export_path, "conf.yaml"), 'w') as outfile:
+        with open(os.path.join(export_path, "conf.yaml"), "w") as outfile:
             yaml.dump(plasmasaver_config, outfile, default_flow_style=False)
 
     plasmasaver_config = read_plasmasaver_config(os.path.join(export_path, "conf.yaml"))
@@ -565,10 +580,17 @@ def export(profile_name, profile_list, profile_count, skip_global=False, skip_sd
 
 
 @exception_handler
-def import_profile(path, skip_global=False, skip_sddm=False, sddm_only=False, config_only=False, data_only=False):
+def import_profile(
+    path,
+    skip_global=False,
+    skip_sddm=False,
+    sddm_only=False,
+    config_only=False,
+    data_only=False,
+):
     # assert
     assert (
-            is_zipfile(path) and path[-5:] == EXPORT_EXTENSION
+        is_zipfile(path) and path[-5:] == EXPORT_EXTENSION
     ), "Not a valid plasmasaver file"
     item = os.path.basename(path)[:-5]
     assert not os.path.exists(
@@ -587,17 +609,19 @@ def import_profile(path, skip_global=False, skip_sddm=False, sddm_only=False, co
     plasmasaver_config = read_plasmasaver_config(config_file_location)
 
     if skip_global:
-        plasmasaver_config['export'].pop('root_share_folder', None)
+        plasmasaver_config["export"].pop("root_share_folder", None)
     if data_only:
-        plasmasaver_config.pop('save', None)
+        plasmasaver_config.pop("save", None)
     if config_only:
-        plasmasaver_config.pop('export', None)
+        plasmasaver_config.pop("export", None)
     if skip_sddm:
-        plasmasaver_config['export'].pop('sddm', None)
-        plasmasaver_config['save'].pop('sddm_configs', None)
+        plasmasaver_config["export"].pop("sddm", None)
+        plasmasaver_config["save"].pop("sddm_configs", None)
     if sddm_only:
-        plasmasaver_config['export'] = {'sddm': plasmasaver_config['export']['sddm']}
-        plasmasaver_config['save'] = {'sddm_configs': plasmasaver_config['save']['sddm_configs']}
+        plasmasaver_config["export"] = {"sddm": plasmasaver_config["export"]["sddm"]}
+        plasmasaver_config["save"] = {
+            "sddm_configs": plasmasaver_config["save"]["sddm_configs"]
+        }
 
     profile_dir = os.path.join(base_profile_dir_path, item)
     copy(os.path.join(temp_path, "save"), profile_dir)
@@ -618,14 +642,20 @@ def import_profile(path, skip_global=False, skip_sddm=False, sddm_only=False, co
                     try:
                         shutil.copy(source, dest)
                     except PermissionError:
-                        command = 'cp %s %s' % (source, dest)
+                        command = "cp %s %s" % (source, dest)
                         if sudo_pass:
-                            subprocess.check_output('echo %s|sudo -S %s; echo $? ' % (sudo_pass, command), shell=True)
+                            subprocess.check_output(
+                                "echo %s|sudo -S %s; echo $? " % (sudo_pass, command),
+                                shell=True,
+                            )
                         elif skip_sudo:
                             pass
                         else:
                             temp_pass = get_sudo_pass(dest)
-                            subprocess.check_output('echo %s|sudo -S %s; echo $? ' % (temp_pass, command), shell=True)
+                            subprocess.check_output(
+                                "echo %s|sudo -S %s; echo $? " % (temp_pass, command),
+                                shell=True,
+                            )
 
     shutil.rmtree(temp_path)
 
@@ -653,19 +683,19 @@ def _get_parser() -> argparse.ArgumentParser:
         "-v", "--version", required=False, action="store_true", help="Show version"
     )
 
-    subparsers = parser.add_subparsers(help='Desired action to perform', dest='action')
+    subparsers = parser.add_subparsers(help="Desired action to perform", dest="action")
     save_parser = subparsers.add_parser("save", help="Save current config as a profile")
     remove_parser = subparsers.add_parser("remove", help="Remove the specified profile")
     list_parser = subparsers.add_parser("list", help="Lists created profiles")
     apply_parser = subparsers.add_parser("apply", help="Apply the specified profile")
     import_parser = subparsers.add_parser("import", help="Import a plasmasaver file")
-    export_parser = subparsers.add_parser("export", help="Export a profile and share with your friends!")
+    export_parser = subparsers.add_parser(
+        "export", help="Export a profile and share with your friends!"
+    )
     wipe_parser = subparsers.add_parser("wipe", help="Wipes all profiles.")
 
     save_parser.add_argument(
-        "profile_name",
-        type=str,
-        help="Name of the profile as a identifier"
+        "profile_name", type=str, help="Name of the profile as a identifier"
     )
     save_parser.add_argument(
         "-f",
@@ -723,14 +753,10 @@ def _get_parser() -> argparse.ArgumentParser:
         help="Skip all sudo operations",
     )
     remove_parser.add_argument(
-        "profile_name",
-        type=str,
-        help="Name of the profile as a identifier"
+        "profile_name", type=str, help="Name of the profile as a identifier"
     )
     apply_parser.add_argument(
-        "profile_name",
-        type=str,
-        help="Name of the profile as a identifier"
+        "profile_name", type=str, help="Name of the profile as a identifier"
     )
     apply_parser.add_argument(
         "-p",
@@ -765,9 +791,7 @@ def _get_parser() -> argparse.ArgumentParser:
         help="Skip all sudo operations",
     )
     export_parser.add_argument(
-        "profile_name",
-        type=str,
-        help="Name of the profile as a identifier"
+        "profile_name", type=str, help="Name of the profile as a identifier"
     )
     export_parser.add_argument(
         "-p",
@@ -814,9 +838,7 @@ def _get_parser() -> argparse.ArgumentParser:
         help="Skip all sudo operations",
     )
     import_parser.add_argument(
-        "profile_name",
-        type=str,
-        help="Name of the profile as a identifier"
+        "profile_name", type=str, help="Name of the profile as a identifier"
     )
     import_parser.add_argument(
         "-p",
@@ -878,82 +900,132 @@ def main():
     sudo_pass = None
     conf_initializer()
 
-    if args.action == 'save':
+    if args.action == "save":
         if args.password and args.skip_sudo:
-            raise Exception('error: -p/--password and --skip-sudo can\'t be used at the same time')
+            raise Exception(
+                "error: -p/--password and --skip-sudo can't be used at the same time"
+            )
         elif args.skip_sudo:
             skip_sudo = True
         elif args.password:
             sudo_pass = args.password
-        if (args.sddm_only and args.include_sddm) or (args.sddm_only and args.include_global):
-            raise Exception('error: --sddm-only can\'t be used with --include-sddm and --include-global')
+        if (args.sddm_only and args.include_sddm) or (
+            args.sddm_only and args.include_global
+        ):
+            raise Exception(
+                "error: --sddm-only can't be used with --include-sddm and --include-global"
+            )
         if args.env:
             conf_initializer(args.env)
         if args.config_file:
             if not os.path.exists(args.config_file):
                 raise Exception(
-                    'error: invalid config file path, The path given in arg doesn\'t exist or is not accessible: %s' % args.config_file)
-            with open(args.config_file, 'r') as configs:
+                    "error: invalid config file path, The path given in arg doesn't exist or is not accessible: %s"
+                    % args.config_file
+                )
+            with open(args.config_file, "r") as configs:
                 e_conf = yaml.safe_load(configs)
-                if 'export' not in e_conf.keys() or 'save' not in e_conf.keys():
+                if "export" not in e_conf.keys() or "save" not in e_conf.keys():
                     raise Exception(
-                        'error: missing config block(s), "save" and "export" are core blocks of plasmasaver configuration')
+                        'error: missing config block(s), "save" and "export" are core blocks of plasmasaver configuration'
+                    )
             if e_conf:
                 global plasmasaver_config_file_path
                 plasmasaver_config_file_path = args.config_file
-        save_profile(args.profile_name, list_of_profiles, force=args.force, include_sddm=args.include_sddm,
-                     include_global=args.include_global, sddm_only=args.sddm_only)
-    elif args.action == 'remove':
+        save_profile(
+            args.profile_name,
+            list_of_profiles,
+            force=args.force,
+            include_sddm=args.include_sddm,
+            include_global=args.include_global,
+            sddm_only=args.sddm_only,
+        )
+    elif args.action == "remove":
         remove_profile(args.profile_name, list_of_profiles, length_of_lop)
 
-    elif args.action == 'list':
+    elif args.action == "list":
         list_profiles(list_of_profiles, length_of_lop)
 
-    elif args.action == 'apply':
+    elif args.action == "apply":
         if args.password and args.skip_sudo:
-            raise Exception('error: -p/--password and --skip-sudo can\'t be used at the same time')
+            raise Exception(
+                "error: -p/--password and --skip-sudo can't be used at the same time"
+            )
         elif args.skip_sudo:
             skip_sudo = True
         elif args.password:
             sudo_pass = args.password
         if (args.sddm_only and args.skip_sddm) or (args.sddm_only and args.skip_global):
-            raise Exception('error: --sddm-only can\'t be used with --include-sddm and --include-global')
-        apply_profile(args.profile_name, list_of_profiles, length_of_lop, skip_sddm=args.skip_sddm,
-                      skip_global=args.skip_global, sddm_only=args.sddm_only)
+            raise Exception(
+                "error: --sddm-only can't be used with --include-sddm and --include-global"
+            )
+        apply_profile(
+            args.profile_name,
+            list_of_profiles,
+            length_of_lop,
+            skip_sddm=args.skip_sddm,
+            skip_global=args.skip_global,
+            sddm_only=args.sddm_only,
+        )
 
-    elif args.action == 'import':
+    elif args.action == "import":
         if args.password and args.skip_sudo:
-            raise Exception('error: -p/--password and --skip-sudo can\'t be used at the same time')
+            raise Exception(
+                "error: -p/--password and --skip-sudo can't be used at the same time"
+            )
         elif args.skip_sudo:
             skip_sudo = True
         elif args.password:
             sudo_pass = args.password
         if (args.sddm_only and args.skip_sddm) or (args.sddm_only and args.skip_global):
-            raise Exception('error: --sddm-only can\'t be used with --include-sddm and --include-global')
+            raise Exception(
+                "error: --sddm-only can't be used with --include-sddm and --include-global"
+            )
         if args.data_only and args.config_only:
-            raise Exception('error: --data-only and --config-only can\'t be used at the same time')
-        import_profile(args.profile_name, skip_global=args.skip_global, skip_sddm=args.skip_sddm,
-                       sddm_only=args.sddm_only, config_only=args.config_only, data_only=args.data_only)
+            raise Exception(
+                "error: --data-only and --config-only can't be used at the same time"
+            )
+        import_profile(
+            args.profile_name,
+            skip_global=args.skip_global,
+            skip_sddm=args.skip_sddm,
+            sddm_only=args.sddm_only,
+            config_only=args.config_only,
+            data_only=args.data_only,
+        )
 
-    elif args.action == 'export':
+    elif args.action == "export":
         if args.password and args.skip_sudo:
-            raise Exception('error: -p/--password and --skip-sudo can\'t be used at the same time')
+            raise Exception(
+                "error: -p/--password and --skip-sudo can't be used at the same time"
+            )
         elif args.skip_sudo:
             skip_sudo = True
         elif args.password:
             sudo_pass = args.password
         if (args.sddm_only and args.skip_sddm) or (args.sddm_only and args.skip_global):
-            raise Exception('error: --sddm-only can\'t be used with --include-sddm and --include-global')
+            raise Exception(
+                "error: --sddm-only can't be used with --include-sddm and --include-global"
+            )
         if args.data_only and args.config_only:
-            raise Exception('error: --data-only and --config-only can\'t be used at the same time')
-        export(args.profile_name, list_of_profiles, length_of_lop, skip_global=args.skip_global,
-               skip_sddm=args.skip_sddm, sddm_only=args.sddm_only, config_only=args.config_only,
-               data_only=args.data_only)
+            raise Exception(
+                "error: --data-only and --config-only can't be used at the same time"
+            )
+        export(
+            args.profile_name,
+            list_of_profiles,
+            length_of_lop,
+            skip_global=args.skip_global,
+            skip_sddm=args.skip_sddm,
+            sddm_only=args.sddm_only,
+            config_only=args.config_only,
+            data_only=args.data_only,
+        )
 
     elif args.version:
         print(f"plasmasaver: {version}")
 
-    elif args.action == 'wipe':
+    elif args.action == "wipe":
         wipe()
 
     else:

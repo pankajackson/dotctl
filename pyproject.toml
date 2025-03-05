@@ -3,29 +3,36 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "plasmasaver"
+name = "dotctl"
 version = "x.x.x"
 authors = [
-  { name="Pankaj Jackson", email="pankajackson@live.co.uk" },
+  { name = "Pankaj Jackson", email = "pankajackson@live.co.uk" }
 ]
-description = "Command Line Interface to manage(save, export, import) KDE Plasma settings/configs in form of profile."
+description = "Command Line Interface to manage (save, export, import) dot files in the form of profiles."
 readme = "README.md"
-license = {file = "LICENSE"}
-requires-python = ">=3.7"
-dependencies=['PyYAML']
-keywords=['kde', 'plasma', 'config', 'setting', 'settings', 'save', 'saver']
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = ["PyYAML"]
+
+keywords = ["dotfiles", "config", "settings", "backup", "dotfile-manager"]
+
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: End Users/Desktop",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
-    "Operating System :: Unix",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: System :: Archiving :: Backup",
+    "Topic :: Utilities"
 ]
 
 [project.scripts]
-plasmasaver = "plasmasaver.plasmasaver:main"
+dotctl = "dotctl.main:main"
 
 [project.urls]
-"Homepage" = "https://github.com/pankajackson/plasmasaver"
-"Bug Tracker" = "https://github.com/pankajackson/plasmasaver/issues"
-"Source" = "https://github.com/pankajackson/plasmasaver"
+Homepage = "https://github.com/pankajackson/dotctl"
+"Bug Tracker" = "https://github.com/pankajackson/dotctl/issues"
+Source = "https://github.com/pankajackson/dotctl"
