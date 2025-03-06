@@ -10,7 +10,7 @@ import traceback
 from random import shuffle
 from zipfile import is_zipfile, ZipFile
 import argparse
-import pkg_resources
+from importlib.metadata import version as pkg_version, PackageNotFoundError
 
 
 try:
@@ -45,7 +45,10 @@ if not os.path.exists(base_profile_dir_path):
 
 list_of_profiles = os.listdir(base_profile_dir_path)
 length_of_lop = len(list_of_profiles)
-version = pkg_resources.get_distribution("plasmasaver").version
+try:
+    version = pkg_version("dotctl")
+except PackageNotFoundError:
+    version = "0.0.0"
 
 conf_kde = {
     "export": {
