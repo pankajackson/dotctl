@@ -199,3 +199,19 @@ def read_plasmasaver_config(config_file=plasmasaver_config_file_path) -> dict:
     parse_functions(tokens, TOKEN_SYMBOL, plasmasaver)
 
     return plasmasaver
+
+
+def conf_initializer(env="NONE"):
+    if not os.path.exists(plasmasaver_config_file_path) or (env and (env != "NONE")):
+        if os.path.expandvars("$XDG_CURRENT_DESKTOP") == "KDE" or env.upper() == "KDE":
+            conf = conf_kde
+            with open(plasmasaver_config_file_path, "w") as outfile:
+                yaml.dump(conf, outfile, default_flow_style=False)
+        else:
+            print(
+                f'plasmasaver: Unknown Desktop environment, please use "-e"/"--env" to specify environment with "save" command to initialize base config.'
+            )
+            conf = conf_others
+            with open(plasmasaver_config_file_path, "w") as outfile:
+                yaml.dump(conf, outfile, default_flow_style=False)
+    return plasmasaver_config_file_path

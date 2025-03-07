@@ -2,7 +2,7 @@ import os
 from importlib.metadata import version as pkg_version, PackageNotFoundError
 from .arg_manager import get_parser
 from .exception import exception_handler
-from .confs import conf_kde, conf_others, sudo_pass, skip_sudo
+from .confs import conf_initializer, sudo_pass, skip_sudo
 from .paths import base_profile_dir_path, plasmasaver_config_file_path
 from .actions import (
     list_profiles,
@@ -31,22 +31,6 @@ try:
     version = pkg_version("dotctl")
 except PackageNotFoundError:
     version = "0.0.0"
-
-
-def conf_initializer(env="NONE"):
-    if not os.path.exists(plasmasaver_config_file_path) or (env and (env != "NONE")):
-        if os.path.expandvars("$XDG_CURRENT_DESKTOP") == "KDE" or env.upper() == "KDE":
-            conf = conf_kde
-            with open(plasmasaver_config_file_path, "w") as outfile:
-                yaml.dump(conf, outfile, default_flow_style=False)
-        else:
-            print(
-                f'plasmasaver: Unknown Desktop environment, please use "-e"/"--env" to specify environment with "save" command to initialize base config.'
-            )
-            conf = conf_others
-            with open(plasmasaver_config_file_path, "w") as outfile:
-                yaml.dump(conf, outfile, default_flow_style=False)
-    return plasmasaver_config_file_path
 
 
 @exception_handler
