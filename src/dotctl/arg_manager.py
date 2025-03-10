@@ -1,5 +1,6 @@
 import argparse
 from dotctl import __APP_NAME__, __APP_VERSION__
+from dotctl.validators import valid_git_url
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -19,10 +20,10 @@ def get_parser() -> argparse.ArgumentParser:
     init_parser.add_argument(
         "-u",
         "--url",
-        type=str,
-        required=True,  # Assuming URL is mandatory
-        help="Git repository URL associated with the profile",
+        type=valid_git_url,
+        help="Git repository URL associated with the profile.",
         metavar="<git-url>",
+        default=None,
     )
 
     init_parser.add_argument(
@@ -30,6 +31,7 @@ def get_parser() -> argparse.ArgumentParser:
         type=str,
         help="Profile name identifier. Defaults to the repository’s default branch if not provided.",
         metavar="<profile>",
+        default=None,
     )
 
     return parser
