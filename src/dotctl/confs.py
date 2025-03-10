@@ -153,12 +153,7 @@ tokens = {
             "SDDM_DIR": sddm_dir,
             "SYS_CONFIG_DIR": system_config_dir,
         }
-    },
-    "functions": {
-        "raw_regex": r"\{\w+\=(?:\"|')\S+(?:\"|')\}",
-        "grouped_regex": r"\{(\w+)\=(?:\"|')(\S+)(?:\"|')\}",
-        "dict": {"ENDS_WITH": ends_with, "BEGINS_WITH": begins_with},
-    },
+    }
 }
 
 
@@ -172,31 +167,11 @@ def parse_keywords(tokens_, token_symbol, parsed):
                     parsed[item][name]["location"] = location.replace(word, value)
 
 
-def parse_functions(tokens_, token_symbol, parsed):
-    functions = tokens_["functions"]
-    raw_regex = f"\\{token_symbol}{functions['raw_regex']}"
-    grouped_regex = f"\\{token_symbol}{functions['grouped_regex']}"
-
-    for item in parsed:
-        for name in parsed[item]:
-            location = parsed[item][name]["location"]
-            occurrences = re.findall(raw_regex, location)
-            if not occurrences:
-                continue
-            for occurrence in occurrences:
-                func = re.search(grouped_regex, occurrence).group(1)
-                if func in functions["dict"]:
-                    parsed[item][name]["location"] = functions["dict"][func](
-                        grouped_regex, location
-                    )
-
-
 @exception_handler
 def read_plasmasaver_config(config_file=plasmasaver_config_file_path) -> dict:
     with open(config_file, "r") as text:
         plasmasaver = yaml.load(text.read(), Loader=yaml.SafeLoader)
     parse_keywords(tokens, TOKEN_SYMBOL, plasmasaver)
-    parse_functions(tokens, TOKEN_SYMBOL, plasmasaver)
 
     return plasmasaver
 
