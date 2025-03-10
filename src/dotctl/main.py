@@ -1,7 +1,7 @@
+from enum import Enum
 from .arg_manager import get_parser
 from .exception import exception_handler
-from enum import Enum
-from dotctl.handlers.Initializer import initialise
+from .handlers.Initializer import initialise
 
 
 class Action(Enum):

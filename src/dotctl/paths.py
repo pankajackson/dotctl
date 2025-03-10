@@ -1,6 +1,5 @@
 import os
 import pwd
-import time
 from dotctl import __APP_NAME__
 
 
