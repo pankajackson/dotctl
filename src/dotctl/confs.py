@@ -1,6 +1,7 @@
 import os
 import yaml
 import re
+import shutil
 from dotctl.exception import exception_handler
 from dotctl.paths import (
     home_path,
@@ -18,106 +19,6 @@ from dotctl.paths import (
 EXPORT_EXTENSION = ".plsv"
 sudo_pass = None
 skip_sudo = False
-
-
-conf_kde = {
-    "export": {
-        "home_folder": {
-            "entries": [
-                ".fonts",
-                ".themes",
-                ".icons",
-                ".wallpapers",
-                ".conky",
-                ".zsh",
-                ".bin",
-                "bin",
-            ],
-            "location": "$HOME/",
-        },
-        "plasma_saver": {"entries": ["profiles"], "location": "$PLASMA_SAVER_DIR"},
-        "sddm": {"entries": ["themes"], "location": "$SDDM_DIR"},
-        "root_share_folder": {
-            "entries": [
-                "plasma",
-                "kwin",
-                "konsole",
-                "fonts",
-                "kfontinst",
-                "color-schemes",
-                "aurorae",
-                "icons",
-                "wallpapers",
-                "Kvantum",
-                "themes",
-            ],
-            "location": "$ROOT_SHARE_DIR",
-        },
-        "share_folder": {
-            "entries": [
-                "plasma",
-                "kwin",
-                "konsole",
-                "fonts",
-                "kfontinst",
-                "color-schemes",
-                "aurorae",
-                "icons",
-                "wallpapers",
-            ],
-            "location": "$SHARE_DIR",
-        },
-    },
-    "save": {
-        "home_folder": {"entries": [".zshrc", ".p10k.zsh"], "location": "$HOME/"},
-        "app_layouts": {
-            "entries": ["dolphin", "konsole"],
-            "location": "$HOME/.local/share/kxmlgui5",
-        },
-        "configs": {
-            "entries": [
-                "gtk-2.0",
-                "gtk-3.0",
-                "gtk-4.0",
-                "Kvantum",
-                "latte",
-                "dolphinrc",
-                "konsolerc",
-                "kcminputrc",
-                "kdeglobals",
-                "kglobalshortcutsrc",
-                "klipperrc",
-                "krunnerrc",
-                "kscreenlockerrc",
-                "ksmserverrc",
-                "kwinrc",
-                "kwinrulesrc",
-                "plasma-org.kde.plasma.desktop-appletsrc",
-                "plasmarc",
-                "plasmashellrc",
-                "gtkrc",
-                "gtkrc-2.0",
-                "lattedockrc",
-                "breezerc",
-                "oxygenrc",
-                "lightlyrc",
-                "ksplashrc",
-                "khotkeysrc",
-                "autostart",
-            ],
-            "location": "$CONFIG_DIR",
-        },
-        "sddm_configs": {"entries": ["sddm.conf.d"], "location": "$SYS_CONFIG_DIR"},
-    },
-}
-
-conf_others = {
-    "save": {"configs": {"location": "$HOME/.config", "entries": []}},
-    "export": {
-        "share_folder": {"location": "$HOME/.local/share", "entries": []},
-        "home_folder": {"location": "$HOME/", "entries": []},
-    },
-}
 
 
 def ends_with(grouped_regex, path) -> str:
@@ -177,16 +78,17 @@ def read_plasmasaver_config(config_file=plasmasaver_config_file_path) -> dict:
 
 
 def conf_initializer(env="NONE"):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    kde_conf_path = os.path.join(base_dir, "templates/kde.yml")
+    other_conf_path = os.path.join(base_dir, "templates/other.yml")
+
     if not os.path.exists(plasmasaver_config_file_path) or (env and (env != "NONE")):
         if os.path.expandvars("$XDG_CURRENT_DESKTOP") == "KDE" or env.upper() == "KDE":
-            conf = conf_kde
-            with open(plasmasaver_config_file_path, "w") as outfile:
-                yaml.dump(conf, outfile, default_flow_style=False)
+            conf_path = kde_conf_path
         else:
             print(
                 f'plasmasaver: Unknown Desktop environment, please use "-e"/"--env" to specify environment with "save" command to initialize base config.'
             )
-            conf = conf_others
-            with open(plasmasaver_config_file_path, "w") as outfile:
-                yaml.dump(conf, outfile, default_flow_style=False)
+            conf_path = other_conf_path
+        shutil.copyfile(conf_path, plasmasaver_config_file_path)
     return plasmasaver_config_file_path
