@@ -11,10 +11,19 @@ authors = [
 description = "Command Line Interface to manage (save, export, import) dot files in the form of profiles."
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.10"
-dependencies = ["PyYAML"]
 
-keywords = ["dotfiles", "config", "settings", "backup", "dotfile-manager"]
+requires-python = ">=3.10"
+dependencies = [
+  "PyYAML"
+]
+
+keywords = [
+  "dotfiles",
+  "config",
+  "settings",
+  "backup",
+  "dotfile-manager"
+]
 
 classifiers = [
     "Programming Language :: Python :: 3",
