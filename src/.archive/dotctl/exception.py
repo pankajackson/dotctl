@@ -1,8 +1,8 @@
 import os
+import pwd
 import traceback
 from datetime import datetime
-from dotctl_alpha.paths import app_home_directory
-from dotctl_alpha import __APP_NAME__
+from .paths import home_path
 
 
 def exception_handler(func):
@@ -11,7 +11,7 @@ def exception_handler(func):
             function = func(*args, **kwargs)
         except Exception as err:
             dateandtime = datetime.now().strftime("[%d/%m/%Y %H:%M:%S]")
-            log_file = os.path.join(app_home_directory, f"{__APP_NAME__}.log")
+            log_file = os.path.join(home_path, "plasmasaver_log.txt")
 
             with open(log_file, "a") as file:
                 file.write(dateandtime + "\n")
@@ -19,7 +19,7 @@ def exception_handler(func):
                 file.write("\n")
 
             print(
-                f"{__APP_NAME__}: {err}\nPlease check the log at {log_file} for more details."
+                f"plasmasaver: {err}\nPlease check the log at {log_file} for more details."
             )
             return None
         else:
