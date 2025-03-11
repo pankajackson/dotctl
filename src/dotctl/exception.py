@@ -3,6 +3,7 @@ import traceback
 from datetime import datetime
 from dotctl.paths import app_home_directory
 from dotctl import __APP_NAME__
+from .utils import log
 
 
 def exception_handler(func):
@@ -18,7 +19,7 @@ def exception_handler(func):
                 traceback.print_exc(file=file)
                 file.write("\n")
 
-            print(
+            log(
                 f"{__APP_NAME__}: {err}\nPlease check the log at {log_file} for more details."
             )
             return None
