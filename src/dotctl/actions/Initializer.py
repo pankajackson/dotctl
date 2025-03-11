@@ -27,10 +27,6 @@ initializer_default_props = InitializerProps(
 def initialise(props: InitializerProps):
     log("Initializing...")
 
-    conf_initializer(
-        env=props.env,
-        custom_config=props.custom_config,
-    )
     dest = props.dest.resolve()
 
     if dest is None:
@@ -62,4 +58,8 @@ def initialise(props: InitializerProps):
             log(f"Branch '{props.profile}' not found. Creating and switching to it...")
             repo.git.checkout("-b", props.profile)
 
+    conf_initializer(
+        env=props.env,
+        custom_config=props.custom_config,
+    )
     log("Profile initialized successfully.")

@@ -1,6 +1,6 @@
 import argparse
 from dotctl import __APP_NAME__, __APP_VERSION__
-from dotctl.validators import valid_git_url
+from dotctl.validators import valid_git_url, valid_config_file
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -38,7 +38,7 @@ def get_parser() -> argparse.ArgumentParser:
     init_parser.add_argument(
         "-c",
         "--config",
-        type=str,
+        type=valid_config_file,
         help="Use external config file.",
         metavar="<path>",
         default=None,

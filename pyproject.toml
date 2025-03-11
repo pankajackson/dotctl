@@ -14,7 +14,8 @@ license = { file = "LICENSE" }
 
 requires-python = ">=3.10"
 dependencies = [
-  "PyYAML"
+  "PyYAML",
+  "gitpython"
 ]
 
 keywords = [
