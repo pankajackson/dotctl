@@ -3,7 +3,7 @@ from pathlib import Path
 from dataclasses import replace
 from .arg_manager import get_parser
 from .exception import exception_handler
-from .actions.Initializer import initialise, InitializerProps, initializer_default_props
+from .actions.initializer import initialise, InitializerProps, initializer_default_props
 
 
 class Action(Enum):
