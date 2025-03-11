@@ -83,7 +83,7 @@ def conf_initializer(
         return app_config_file_path
 
     if custom_config:
-        print(f"Using custom config file: {custom_config}")
+        log(f"Using custom config file: {custom_config}")
         custom_config = custom_config.resolve()
         if not custom_config.exists():
             raise ValueError(f"Config file '{custom_config}' does not exist.")
@@ -93,30 +93,32 @@ def conf_initializer(
             raise RuntimeError(f"Failed to copy config file: {e}")
         return app_config_file_path
 
-    base_dir = Path(__BASE_DIR__).resolve()
+    templates_base_dir = Path(__BASE_DIR__) / "templates"
+    templates_base_dir = templates_base_dir.resolve()
 
-    env_templates = {
-        "KDE": "templates/kde.yaml",
-        "OTHER": "templates/other.yaml",
-    }
+    if env:
+        conf_file_name = templates_base_dir / f"{env}.yaml"
+        if not conf_file_name.exists():
+            log(f"Invalid Desktop Environment '{env}', using default config file.")
+            conf_file_name = templates_base_dir / "other.yaml"
 
-    if not env:
-        env = os.environ.get("XDG_CURRENT_DESKTOP", "").split(":")[0].upper()
-
+    else:
+        env = os.environ.get("XDG_CURRENT_DESKTOP", "").split(":")[0].lower()
         if not env:
             log(
-                'Unknown Desktop Environment. Use "-e"/"--env" with the "save" command to specify an environment.'
+                'Unknown Desktop Environment. Use "-e"/"--env" to specify an environment, using default config file.'
             )
-            env = "OTHER"
+            conf_file_name = templates_base_dir / "other.yaml"
+        else:
+            conf_file_name = templates_base_dir / f"{env}.yaml"
 
-    conf_file_name = env_templates.get(env.upper(), env_templates["OTHER"])
-    conf_path = base_dir / conf_file_name
-
-    if not conf_path.exists():
-        raise FileNotFoundError(f"Template config file '{conf_path}' does not exist.")
+    if not conf_file_name.exists():
+        raise FileNotFoundError(
+            f"Template config file '{conf_file_name}' does not exist."
+        )
 
     try:
-        shutil.copyfile(conf_path, app_config_file_path)
+        shutil.copyfile(conf_file_name, app_config_file_path)
     except shutil.Error as e:
         raise RuntimeError(f"Failed to copy template config file: {e}")
 

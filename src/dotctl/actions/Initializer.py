@@ -11,7 +11,7 @@ class InitializerProps:
     custom_config: Path | None
     git_url: str | None
     profile: str | None
-    env: str
+    env: str | None
     dest: Path
 
 
@@ -19,7 +19,7 @@ initializer_default_props = InitializerProps(
     custom_config=None,
     git_url=None,
     profile=None,
-    env="other",
+    env=None,
     dest=Path(app_profile_directory),
 )
 
