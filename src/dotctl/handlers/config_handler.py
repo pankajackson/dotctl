@@ -103,7 +103,17 @@ def conf_initializer(
             conf_file_name = templates_base_dir / "other.yaml"
 
     else:
-        env = os.environ.get("XDG_CURRENT_DESKTOP", "").split(":")[0].lower()
+        env = (
+            (
+                os.environ.get("XDG_CURRENT_DESKTOP")
+                or os.environ.get("XDG_SESSION_DESKTOP")
+                or os.environ.get("DESKTOP_SESSION")
+                or os.environ.get("GDMSESSION")
+                or ""
+            )
+            .split(":")[0]
+            .lower()
+        )
         if not env:
             log(
                 'Unknown Desktop Environment. Use "-e"/"--env" to specify an environment, using default config file.'
@@ -111,6 +121,11 @@ def conf_initializer(
             conf_file_name = templates_base_dir / "other.yaml"
         else:
             conf_file_name = templates_base_dir / f"{env}.yaml"
+            if not conf_file_name.exists():
+                log(
+                    f"Template for '{env}' Desktop Environment not exist, using default config file."
+                )
+                conf_file_name = templates_base_dir / "other.yaml"
 
     if not conf_file_name.exists():
         raise FileNotFoundError(
