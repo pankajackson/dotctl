@@ -1,6 +1,6 @@
 from pathlib import Path
 from dataclasses import dataclass, replace
-from dotctl.paths import app_profile_directory, app_config_file
+from dotctl.paths import app_profile_directory
 from dotctl.utils import log
 from dotctl.handlers.config_handler import conf_initializer
 from git import Repo, GitCommandError
