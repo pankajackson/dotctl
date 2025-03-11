@@ -1,0 +1,11 @@
+save:
+  configs:
+    location: $HOME/.config
+    entries: []
+export:
+  share_folder:
+    location: $HOME/.local/share
+    entries: []
+  home_folder:
+    location: $HOME/
+    entries: []
