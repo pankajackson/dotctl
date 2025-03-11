@@ -27,6 +27,7 @@ def get_parser() -> argparse.ArgumentParser:
     )
 
     init_parser.add_argument(
+        "-p",
         "--profile",
         type=str,
         help="Profile name identifier. Defaults to the repository’s default branch if not provided.",
@@ -38,7 +39,7 @@ def get_parser() -> argparse.ArgumentParser:
         "-c",
         "--config",
         type=str,
-        help="Use external config file",
+        help="Use external config file.",
         metavar="<path>",
         default=None,
     )
