@@ -1,6 +1,6 @@
 import argparse
 from dotctl import __APP_NAME__, __APP_VERSION__
-from dotctl.validators import valid_git_url
+from dotctl.validators import valid_git_url, valid_config_file
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -27,6 +27,7 @@ def get_parser() -> argparse.ArgumentParser:
     )
 
     init_parser.add_argument(
+        "-p",
         "--profile",
         type=str,
         help="Profile name identifier. Defaults to the repository’s default branch if not provided.",
@@ -34,4 +35,39 @@ def get_parser() -> argparse.ArgumentParser:
         default=None,
     )
 
+    init_parser.add_argument(
+        "-c",
+        "--config",
+        type=valid_config_file,
+        help="Use external config file.",
+        metavar="<path>",
+        default=None,
+    )
+
+    init_parser.add_argument(
+        "-e",
+        "--env",
+        type=str,
+        help="Desktop environment (e.g. kde)",
+        metavar="<env>",
+        default=None,
+    )
+
+    # Save Parser
+    save_parser = subparsers.add_parser("save", help="Save current config in a profile")
+
+    save_parser.add_argument(
+        "-p",
+        "--password",
+        type=str,
+        help="Sudo Password to authorize restricted data (e.g. /usr/share)",
+        metavar="<password>",
+        default=None,
+    )
+    save_parser.add_argument(
+        "--skip-sudo",
+        required=False,
+        action="store_true",
+        help="Skip all sudo operations",
+    )
     return parser

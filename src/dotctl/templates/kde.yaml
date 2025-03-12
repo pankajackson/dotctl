@@ -1,0 +1,92 @@
+export:
+  home_folder:
+    entries:
+      - .fonts
+      - .themes
+      - .icons
+      - .wallpapers
+      - .conky
+      - .zsh
+      - .bin
+      - bin
+    location: $HOME/
+  # plasma_saver:
+  #   entries:
+  #     - profiles
+  #   location: $PLASMA_SAVER_DIR
+  root_share_folder:
+    entries:
+      - plasma
+      - kwin
+      - konsole
+      - fonts
+      - kfontinst
+      - color-schemes
+      - aurorae
+      - icons
+      - wallpapers
+      - Kvantum
+      - themes
+    location: $SYS_SHARE_DIR
+  sddm:
+    entries:
+      - themes
+    location: $SYS_SHARE_DIR/sddm
+  share_folder:
+    entries:
+      - plasma
+      - kwin
+      - konsole
+      - fonts
+      - kfontinst
+      - color-schemes
+      - aurorae
+      - icons
+      - wallpapers
+    location: $SHARE_DIR
+save:
+  app_layouts:
+    entries:
+      - dolphin
+      - konsole
+    location: $HOME/.local/share/kxmlgui5
+  configs:
+    entries:
+      - gtk-2.0
+      - gtk-3.0
+      - gtk-4.0
+      - Kvantum
+      - latte
+      - dolphinrc
+      - konsolerc
+      - kcminputrc
+      - kdeglobals
+      - kglobalshortcutsrc
+      - klipperrc
+      - krunnerrc
+      - kscreenlockerrc
+      - ksmserverrc
+      - kwinrc
+      - kwinrulesrc
+      - plasma-org.kde.plasma.desktop-appletsrc
+      - plasmarc
+      - plasmashellrc
+      - gtkrc
+      - gtkrc-2.0
+      - lattedockrc
+      - breezerc
+      - oxygenrc
+      - lightlyrc
+      - ksplashrc
+      - khotkeysrc
+      - autostart
+    location: $CONFIG_DIR
+  home_folder:
+    entries:
+      - .zshrc
+      - .p10k.zsh
+    location: $HOME/
+  sddm_configs:
+    entries:
+      - sddm.conf.d
+    location: $SYS_CONFIG_DIR
