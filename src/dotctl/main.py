@@ -3,7 +3,8 @@ from pathlib import Path
 from dataclasses import replace
 from .arg_manager import get_parser
 from .exception import exception_handler
-from .actions.initializer import initialise, InitializerProps, initializer_default_props
+from .actions.initializer import initialise, initializer_default_props
+from .actions.saver import save, saver_default_props
 
 
 class Action(Enum):
@@ -26,6 +27,8 @@ class DotCtl:
         profile: str | None = None,
         config: str | None = None,
         env: str | None = None,
+        skip_sudo: bool = False,
+        password: str | None = None,
         *args,
         **kwargs,
     ):
@@ -34,10 +37,14 @@ class DotCtl:
         self.profile = profile
         self.config = config
         self.env = str(env) if env else None
+        self.skip_sudo = skip_sudo
+        self.password = password
 
     def run(self):
         if self.action == Action.init:
             self.init()
+        elif self.action == Action.save:
+            self.save()
 
     def init(self):
         initializer_props_dict = {}
@@ -55,6 +62,15 @@ class DotCtl:
 
         initialise(initializer_props)
 
+    def save(self):
+        saver_props_dict = {}
+        if self.skip_sudo:
+            saver_props_dict["skip_sudo"] = self.skip_sudo
+        if self.password:
+            saver_props_dict["password"] = self.password
+        saver_props = replace(saver_default_props, **saver_props_dict)
+        save(saver_props)
+
 
 @exception_handler
 def main():
@@ -70,14 +86,22 @@ def main():
     except ValueError:
         parser.error(f"Invalid action: {args.action}")
 
-    dot_ctl_obj = DotCtl(
-        action=action,
-        git_url=args.url,
-        profile=args.profile,
-        config=args.config,
-        env=args.env,
-    )
-    dot_ctl_obj.run()
+    if args.action == "init":
+        dot_ctl_obj = DotCtl(
+            action=action,
+            git_url=args.url,
+            profile=args.profile,
+            config=args.config,
+            env=args.env,
+        )
+        dot_ctl_obj.run()
+    elif args.action == "save":
+        dot_ctl_obj = DotCtl(
+            action=action,
+            skip_sudo=args.skip_sudo,
+            profile=args.password,
+        )
+        dot_ctl_obj.run()
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ import os
 import yaml
 import re
 import shutil
+from dataclasses import dataclass
 from pathlib import Path
 from dotctl import __BASE_DIR__
 from dotctl.exception import exception_handler
@@ -18,6 +19,18 @@ from dotctl.paths import (
 from dotctl.utils import log
 
 EXPORT_EXTENSION = ".dtsv"
+
+
+@dataclass
+class EntryConfig:
+    entries: list[str]
+    location: str
+
+
+@dataclass
+class Config:
+    save: dict[str, EntryConfig]
+    export: dict[str, EntryConfig]
 
 
 def ends_with(grouped_regex, path) -> str:
@@ -48,29 +61,32 @@ tokens = {
         "CONFIG_DIR": config_directory,
         "SHARE_DIR": share_directory,
         "BIN_DIR": bin_directory,
-        "ROOT_SHARE_DIR": sys_share_directory,
+        "SYS_SHARE_DIR": sys_share_directory,
         "SYS_CONFIG_DIR": sys_config_directory,
     }
 }
 
 
-def parse_keywords(tokens_, token_symbol, parsed):
-    for item in parsed:
-        for name in parsed[item]:
-            for key, value in tokens_["keywords"]["dict"].items():
+def parse_keywords(tokens_: dict, token_symbol: str, config: dict):
+    for item in config:
+        for name in config[item]:
+            for key, value in tokens_["keywords"].items():
                 word = token_symbol + key
-                location = parsed[item][name]["location"]
+                location = config[item][name]["location"]
                 if word in location:
-                    parsed[item][name]["location"] = location.replace(word, value)
+                    config[item][name]["location"] = location.replace(word, value)
 
 
 @exception_handler
-def read_plasmasaver_config(config_file=app_config_file) -> dict:
+def conf_reader(config_file: Path = Path(app_config_file)) -> Config:
     with open(config_file, "r") as text:
-        plasmasaver = yaml.load(text.read(), Loader=yaml.SafeLoader)
-    parse_keywords(tokens, TOKEN_SYMBOL, plasmasaver)
+        config = yaml.load(text.read(), Loader=yaml.SafeLoader)
 
-    return plasmasaver
+    parse_keywords(tokens, TOKEN_SYMBOL, config)
+    return Config(
+        save={k: EntryConfig(**v) for k, v in config["save"].items()},
+        export={k: EntryConfig(**v) for k, v in config["export"].items()},
+    )
 
 
 def conf_initializer(

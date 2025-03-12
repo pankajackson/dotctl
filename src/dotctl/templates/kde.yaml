@@ -27,11 +27,11 @@ export:
       - wallpapers
       - Kvantum
       - themes
-    location: $ROOT_SHARE_DIR
+    location: $SYS_SHARE_DIR
   sddm:
     entries:
       - themes
-    location: $SDDM_DIR
+    location: $SYS_SHARE_DIR/sddm
   share_folder:
     entries:
       - plasma

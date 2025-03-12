@@ -53,4 +53,21 @@ def get_parser() -> argparse.ArgumentParser:
         default=None,
     )
 
+    # Save Parser
+    save_parser = subparsers.add_parser("save", help="Save current config in a profile")
+
+    save_parser.add_argument(
+        "-p",
+        "--password",
+        type=str,
+        help="Sudo Password to authorize restricted data (e.g. /usr/share)",
+        metavar="<password>",
+        default=None,
+    )
+    save_parser.add_argument(
+        "--skip-sudo",
+        required=False,
+        action="store_true",
+        help="Skip all sudo operations",
+    )
     return parser
