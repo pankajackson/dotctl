@@ -1,8 +1,9 @@
 FROM ubuntu:20.04
 
-#input GitHub runner version argument
+# Input GitHub runner version argument
 ARG RUNNER_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
+ENV USER=runner_user
 
 LABEL Author="Pankaj Kumar Patel"
 LABEL Email="pankajackson@live.co.uk"
@@ -10,31 +11,32 @@ LABEL GitHub="https://github.com/pankajackson"
 LABEL BaseImage="ubuntu:20.04"
 LABEL RunnerVersion=${RUNNER_VERSION}
 
-# update the base packages + add a non-sudo user
-RUN apt-get update -y && apt-get upgrade -y && useradd -m docker
+# Update and install required packages
+RUN apt-get update -y && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    curl nodejs wget unzip vim git azure-cli jq build-essential libssl-dev \
+    libffi-dev python3 python3-venv python3-dev python3-pip docker.io && \
+    rm -rf /var/lib/apt/lists/*
 
-# install the packages and dependencies along with jq so we can parse JSON (add additional packages as necessary)
-RUN apt-get install -y --no-install-recommends \
-    curl nodejs wget unzip vim git azure-cli jq build-essential libssl-dev libffi-dev python3 python3-venv python3-dev python3-pip
+# Create non-root user and add to the docker group
+RUN useradd -m $USER && usermod -aG docker $USER
 
-# cd into the user directory, download and unzip the github actions runner
-RUN cd /home/docker && mkdir actions-runner && cd actions-runner \
+# Download and install GitHub Actions runner
+RUN cd /home/$USER && mkdir actions-runner && cd actions-runner \
     && curl -O -L https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz \
     && tar xzf ./actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz
 
-# install some additional dependencies
-RUN chown -R docker ~docker && /home/docker/actions-runner/bin/installdependencies.sh
+# Install additional dependencies
+RUN chown -R $USER:$USER /home/$USER/actions-runner && /home/$USER/actions-runner/bin/installdependencies.sh
 
-# add over the start.sh script
+# Copy start script
 ADD scripts/start.sh start.sh
-
-# make the script executable
 RUN chmod +x start.sh
 
-# set the user to "docker" so all subsequent commands are run as the docker user
-USER docker
 
-# set the entrypoint to the start.sh script
+# Set the user to "$USER"
+USER $USER
+# WORKDIR /home/$USER/actions-runner
+
+# Set the entrypoint to the start.sh script
 ENTRYPOINT ["./start.sh"]
-
-
