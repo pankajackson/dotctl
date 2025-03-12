@@ -1,0 +1,13 @@
+services:
+  runner:
+    image: github-runner-docker-local:latest
+    build:
+      context: .
+      args:
+        RUNNER_VERSION: "2.322.0"
+    # environment:
+    #   GH_TOKEN: ${GH_TOKEN}
+    #   GH_OWNER: ${GH_OWNER}
+    #   GH_REPOSITORY: ${GH_REPOSITORY}
+    env_file:
+      - ./.env

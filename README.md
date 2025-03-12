@@ -1,96 +1,191 @@
-# PlasmaSaver #
+# DotCtl
+
+A CLI Tool to Manage DOT Files/Settings/Configurations.
+
+## Features
+
+- Save Profile: Save existing dot files/config/settings.
+- Import Profile: Import existing dot files/config/settings from a `.plsv` file.
+- Export Profile: Export and share existing dot files/config/settings to a `.plsv` file.
+- Manage multiple profiles with ease.
+
+## Installation
+
+```sh
+pip install dotctl
+```
+
+## CLI Guide
+
+### Save Profile
+
+```sh
+dotctl save <profile_name>
+```
+
+**Example:**
+
+```sh
+dotctl save MyProfile
+```
+
+**Options:**
+
+- `-f, --force` → Overwrite already saved profiles.
+- `-c <path>, --config-file <path>` → Use external config file.
+- `-e <env>, --env <env>` → Desktop environment (e.g., KDE).
+- `-p <password>, --password <password>` → Sudo Password to authorize restricted data (e.g., `/usr/share`).
+- `--include-global` → Include data from the global data directory (`/usr/share`).
+- `--include-sddm` → Include SDDM data/configs (`/usr/share/sddm`, `/etc/sddm.conf.d`).
+- `--sddm-only` → Operate only on SDDM configurations (**Note:** Requires sudo password).
+- `--skip-sudo` → Skip all sudo operations.
+
+### Remove Profile
+
+```sh
+dotctl remove <profile_name>
+```
+
+**Example:**
+
+```sh
+dotctl remove MyProfile
+```
+
+### List Profiles
+
+```sh
+dotctl list
+```
+
+### Apply Profile
+
+```sh
+dotctl apply <profile_name>
+```
+
+**Example:**
+
+```sh
+dotctl apply MyProfile
+```
+
+**Options:**
+
+- `-p <password>, --password <password>` → Sudo Password for restricted data.
+- `--sddm-only` → Apply only SDDM configurations (**Requires sudo password**).
+- `--skip-global` → Skip data from the global directory (`/usr/share`).
+- `--skip-sddm` → Skip SDDM configurations.
+- `--skip-sudo` → Skip all sudo operations.
+
+### Import Profile
+
+```sh
+dotctl import <profile_path>
+```
+
+**Example:**
+
+```sh
+dotctl import MyProfile.plsv
+```
+
+**Options:**
+
+- `-p <password>, --password <password>` → Sudo Password for restricted data.
+- `--config-only` → Apply only dot files/configurations (`~/.config`).
+- `--data-only` → Apply only dot files/data (`~/.local/share`).
+- `--sddm-only` → Apply only SDDM configurations (**Requires sudo password**).
+- `--skip-global` → Skip global data.
+- `--skip-sddm` → Skip SDDM configurations.
+- `--skip-sudo` → Skip all sudo operations.
+
+### Export Profile
+
+```sh
+dotctl export <profile_path>
+```
+
+**Example:**
+
+```sh
+dotctl export MyProfile.plsv
+```
+
+**Options:**
+
+- `-p <password>, --password <password>` → Sudo Password for restricted data.
+- `--config-only` → Export only dot files/configurations.
+- `--data-only` → Export only dot files/data.
+- `--sddm-only` → Export only SDDM configurations (**Requires sudo password**).
+- `--skip-global` → Skip global data.
+- `--skip-sddm` → Skip SDDM configurations.
+- `--skip-sudo` → Skip all sudo operations.
+
+### Wipe All Profiles
+
+```sh
+dotctl wipe
+```
+
+### Help
+
+```sh
+dotctl -h
+dotctl <action> -h
+```
+
+**Example:**
+
+```sh
+dotctl import -h
+```
+
+### Version
+
+```sh
+dotctl -v
+```
 
 ---
-A CLI Tool to Manage KDE Plasma Settings/Configurations.
 
-### Features ###
-* Save Profile: Save existing plasma config/settings.
-* Import Profile: Import existing plasma config/settings from .plsv file.
-* Export Profile: Export and share existing plasma config/settings to .plsv file.
+## Development & Publishing Guide
 
-### Installation ###
-    pip install plasmasaver
-    
+### Setup Development Environment
 
-### Cli Guide ###
+```sh
+# Create virtual environment (optional but recommended)
+python -m venv venv
+source venv/bin/activate  # On Linux/macOS
+venv\Scripts\activate  # On Windows
 
-##### Save Profile #####
-    plasmasaver save <profile_name>
-    eg: plasmasaver save MyProfile
-Options:
-*  ```-f, --force``` Overwrite already saved profiles
-*  ```-c <path>, --config-file <path>``` Use external config file
-*  ```-e <env>, --env <env>``` Desktop environment (e.g. kde)
-*  ```-p <password>, --password <password>``` Sudo Password to authorize restricted data (e.g. /usr/share)
-*  ```--include-global``` Include data from global data directory (/usr/share)
-*  ```--include-sddm``` Include sddm data/configs directory (/usr/share/sddm, /etc/sddm.conf.d)
-*  ```--sddm-only``` Perform operation only on sddm data/configurations (Note: sudo password required)
-*  ```--skip-sudo``` Skip all sudo operations
+# Install dependencies
+pip install -r requirements.txt
+```
 
+### Build the Package
 
-##### Remove Profile #####
-    plasmasaver remove <profile_name>
-    eg: plasmasaver remove MyProfile
+```sh
+python -m build
+```
 
+This will generate a `dist/` directory with `.tar.gz` and `.whl` files.
 
-##### List Profile #####
-    plasmasaver list
+### Publish to TestPyPI
 
+```sh
+twine upload --repository testpypi dist/*
+```
 
-##### Apply Profile #####
-    plasmasaver apply <profile_name>
-    eg: plasmasaver apply MyProfile
-Options:
-*  ```-p <password>, --password <password>``` Sudo Password to authorize restricted data (e.g. /usr/share)
-*  ```--sddm-only``` Apply only sddm (Note: sudo password required)
-* ```--skip-global``` Skip data from global data directory (/usr/share)
-* ```--skip-sddm``` Skip sddm data/configs directory (/usr/share/sddm, /etc/sddm.conf.d)
-*  ```--skip-sudo``` Skip all sudo operations
+### Publish to PyPI
 
+```sh
+twine upload --repository pypi dist/*
+```
 
-##### Import Profile #####
-    plasmasaver import <profile_path>
-    eg: plasmasaver import MyProfile.plsv
-Options:
-*  ```-p <password>, --password <password>```
-                        Sudo Password to authorize restricted data (e.g. /usr/share)
-*  ```--config-only```         Perform operation only on plasma configs (skip data, e.g. ~/.config)
-*  ```--data-only```           Perform operation only on plasma data (skip configs, e.g. ~/.local/share)
-*  ```--sddm-only```           Perform operation only on sddm data/configurations (Note: sudo password required)
-*  ```--skip-global```         Skip data from global data directory (/usr/share)
-*  ```--skip-sddm```           Skip sddm data/configs directory (/usr/share/sddm, /etc/sddm.conf.d)
-*  ```--skip-sudo```           Skip all sudo operations
+---
 
+## Who do I talk to?
 
-##### Export Profile #####
-    plasmasaver export <profile_path>
-    eg: plasmasaver export MyProfile.plsv
-Options:
-*  ```-p <password>, --password <password>```
-                        Sudo Password to authorize restricted data (e.g. /usr/share)
-*  ```--config-only```         Perform operation only on plasma configs (skip data, e.g. ~/.config)
-*  ```--data-only```           Perform operation only on plasma data (skip configs, e.g. ~/.local/share)
-*  ```--sddm-only```           Perform operation only on sddm data/configurations (Note: sudo password required)
-*  ```--skip-global```         Skip data from global data directory (/usr/share)
-*  ```--skip-sddm```           Skip sddm data/configs directory (/usr/share/sddm, /etc/sddm.conf.d)
-*  ```--skip-sudo```           Skip all sudo operations
-
-
-##### Wipe all Profiles #####
-    plasmasaver wipe
-
-
-##### Help #####
-    plasmasaver -h
-    plasmasaver <action> -h
-    eg: plasmasaver import -h
-
-
-##### Version #####
-    plasmasaver -v
-
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+- **Repo Owner/Admin:** Pankaj Jackson
+- **Community Support:** Reach out via GitHub Issues
