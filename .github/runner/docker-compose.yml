@@ -6,7 +6,7 @@ services:
       args:
         RUNNER_VERSION: "2.322.0"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:rw
+      - /var/run/docker.sock:/var/run/docker.sock
     # environment:
     #   GH_TOKEN: ${GH_TOKEN}
     #   GH_OWNER: ${GH_OWNER}
