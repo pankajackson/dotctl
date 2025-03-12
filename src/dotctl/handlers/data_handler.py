@@ -1,15 +1,65 @@
 import subprocess
-import shutil
 import getpass
 from pathlib import Path
 from dotctl.exception import exception_handler
 from dotctl.utils import log
 
 
+def rsync(
+    source: Path, destination: Path, sudo_pass: str | None = None, is_dir: bool = False
+):
+    """Synchronizes source to destination using rsync with sudo support."""
+    rsync_command = "rsync"
+    exclude_patterns = ["*.pyc", "*.pyo"]
+    exclude_options = [f"--exclude={pattern}" for pattern in exclude_patterns]
+    rsync_options = ["-az", "--delete"]  # Remove redundant comma
+
+    if is_dir:
+        source_str = str(source) + "/"
+        destination_str = str(destination) + "/"
+    else:
+        source_str = str(source)
+        destination_str = str(destination)
+    if sudo_pass:
+        command = [
+            "sshpass",
+            "-p",
+            sudo_pass,
+            "sudo",
+            rsync_command,
+            *rsync_options,
+            *exclude_options,
+            source_str,
+            destination_str,  # Ensure paths are strings
+        ]
+    else:
+        command = [
+            rsync_command,
+            *rsync_options,
+            *exclude_options,
+            source_str,
+            destination_str,
+        ]
+
+    process = subprocess.Popen(
+        command,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    stdout, stderr = process.communicate()
+
+    if process.returncode != 0:
+        log(f"rsync failed: {stderr.strip()}")
+        raise subprocess.CalledProcessError(process.returncode, command, stderr)
+
+    return stdout.strip()  # Return output for debugging
+
+
 def get_sudo_pass(file, sudo_max_attempts=3):
     """Prompt for sudo password and handle user choices."""
-    global sudo_pass, skip_sudo
-
     print(f"Required sudo to process {file}")
     print("Please select one option from the list:")
     print("     1. Provide sudo Password and apply to recurrence")
@@ -24,96 +74,70 @@ def get_sudo_pass(file, sudo_max_attempts=3):
         return (
             get_sudo_pass(file, sudo_max_attempts - 1)
             if sudo_max_attempts > 0
-            else None
+            else (None, None, False)
         )
 
-    if sudo_behaviour_status in {1, 2}:
+    if sudo_behaviour_status == 1:
         s_pass = getpass.getpass("Please provide password: ")
-        if sudo_behaviour_status == 1:
-            sudo_pass = s_pass
-        return s_pass
+        return None, s_pass, False  # Apply password globally (recurrence)
+    elif sudo_behaviour_status == 2:
+        s_pass = getpass.getpass("Please provide password: ")
+        return s_pass, None, False  # Apply password only for current file
     elif sudo_behaviour_status == 3:
-        skip_sudo = True
-        return None
+        return None, None, True  # Skip all
     elif sudo_behaviour_status == 4:
-        return None
-    else:
-        log("Error: Invalid input")
-        return (
-            get_sudo_pass(file, sudo_max_attempts - 1)
-            if sudo_max_attempts > 0
-            else None
-        )
+        return None, None, False  # Skip only current file
+
+    log("Error: Invalid input")
+    return (
+        get_sudo_pass(file, sudo_max_attempts - 1)
+        if sudo_max_attempts > 0
+        else (None, None, False)
+    )
 
 
-def run_sudo_command(command, sudo_pass):
-    """Run a shell command with sudo, using the provided password."""
+def run_command(command, sudo_pass: str | None = None):
+    """Runs a shell command and returns success status, output, and exit code."""
     if sudo_pass:
-        try:
-            subprocess.check_output(
-                f"echo {sudo_pass} | sudo -S {command}",
-                shell=True,
-                stderr=subprocess.DEVNULL,
-            )
-        except subprocess.CalledProcessError:
-            log(f"Failed to execute: {command}")
-    else:
-        log(f"Skipping sudo command: {command}")
+        command = f"echo {sudo_pass} | sudo -S {command}"
+
+    try:
+        result = subprocess.run(
+            command, shell=True, check=True, text=True, capture_output=True
+        )
+        return True, result.stdout.strip(), result.returncode  # Success
+    except subprocess.CalledProcessError as e:
+        return False, e.stderr.strip() if e.stderr else "", e.returncode  # Failure
 
 
 @exception_handler
 def copy(source: Path, dest: Path, skip_sudo=False, sudo_pass=None):
-    """Copy files and directories with sudo handling."""
+    """Copies files/directories using rsync and handles sudo permission issues."""
+    temp_pass = None
+    source_exists = False
 
-    # No source to copy, just clean up destination if necessary
-    if not source.exists():
-        if dest.exists():
-            try:
-                if dest.is_dir():
-                    shutil.rmtree(dest)
-                else:
-                    dest.unlink()
-            except PermissionError:
-                if not skip_sudo:
-                    temp_pass = sudo_pass or get_sudo_pass(dest)
-                    if temp_pass:
-                        run_sudo_command(f"rm -rf {dest}", temp_pass)
-        return
+    try:
+        source_exists = source.exists()
+        is_dir = source.is_dir()
+    except PermissionError:
+        if not skip_sudo:
+            temp_pass, sudo_pass, skip_sudo = get_sudo_pass(source)
+            success, _, _ = run_command(f"ls {source}", temp_pass or sudo_pass)
+            source_exists = success
+            _, _, exit_code = run_command(f"test -d {source}", temp_pass or sudo_pass)
+            is_dir = exit_code == 0
+        else:
+            return skip_sudo, sudo_pass
+    if not source_exists:
+        return skip_sudo, sudo_pass
 
     assert source != dest, "Source and destination can't be the same"
 
-    # If the source is a file, just copy it over, overwriting if necessary
-    if source.is_file():
-        if dest.exists():
-            try:
-                dest.unlink()
-            except PermissionError:
-                if not skip_sudo:
-                    temp_pass = sudo_pass or get_sudo_pass(dest)
-                    if temp_pass:
-                        run_sudo_command(f"rm -f {dest}", temp_pass)
-
-        try:
-            shutil.copy2(source, dest)
-        except PermissionError:
-            if not skip_sudo:
-                temp_pass = sudo_pass or get_sudo_pass(dest)
-                if temp_pass:
-                    run_sudo_command(f"cp {source} {dest}", temp_pass)
-        return
-
-    # If source is a directory, create the destination if needed
-    if not dest.exists():
-        try:
-            dest.mkdir(parents=True, exist_ok=True)
-        except PermissionError:
-            if not skip_sudo:
-                temp_pass = sudo_pass or get_sudo_pass(dest)
-                if temp_pass:
-                    run_sudo_command(f"mkdir -p {dest}", temp_pass)
-
-    # Recursively copy contents
-    for item in source.iterdir():
-        source_path = source / item.name
-        dest_path = dest / item.name
-        copy(source_path, dest_path, skip_sudo=skip_sudo, sudo_pass=sudo_pass)
+    try:
+        rsync(source, dest, sudo_pass or temp_pass, is_dir=is_dir)
+    except subprocess.CalledProcessError:
+        if not skip_sudo:
+            temp_pass, sudo_pass, skip_sudo = get_sudo_pass(source)
+            rsync(source, dest, temp_pass or sudo_pass, is_dir=is_dir)
+    # print(skip_sudo, sudo_pass)
+    return skip_sudo, sudo_pass

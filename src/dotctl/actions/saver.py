@@ -39,6 +39,16 @@ def save(props: SaverProps) -> None:
         for entry in section.entries:
             source = source_base_dir / entry
             dest = dest_base_dir / entry
-            copy(source, dest, skip_sudo=props.skip_sudo, sudo_pass=props.password)
+            result = copy(
+                source, dest, skip_sudo=props.skip_sudo, sudo_pass=props.password
+            )
+
+            # Updated props
+            if result is not None:
+                skip_sudo, sudo_pass = result
+                if skip_sudo is not None:
+                    props.skip_sudo = skip_sudo
+                if sudo_pass is not None:
+                    props.password = sudo_pass
 
     log("Profile saved successfully!")
