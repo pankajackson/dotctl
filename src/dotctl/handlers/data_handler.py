@@ -58,21 +58,21 @@ def rsync(
     return stdout.strip()  # Return output for debugging
 
 
-def get_sudo_pass(file: str, sudo_max_attempts: int = 3):
+def get_sudo_pass(path: Path, sudo_max_attempts: int = 3):
     """Prompt for sudo password and handle user choices."""
-    print(f"Required sudo to process {file}")
-    print("Please select one option from the list:")
+    log(f"Required sudo to process {path}")
+    log("Please select one option from the list:")
     print("     1. Provide sudo Password and apply to recurrence")
-    print("     2. Provide sudo Password and apply to current file")
+    print("     2. Provide sudo Password and apply to current path")
     print("     3. Skip all")
-    print("     4. Skip current file")
+    print("     4. Skip current path")
 
     try:
         sudo_behaviour_status = int(input("Please provide your input [1/2/3/4]: "))
     except ValueError:
         log("Invalid input. Please enter a number between 1 and 4.")
         return (
-            get_sudo_pass(file, sudo_max_attempts - 1)
+            get_sudo_pass(path, sudo_max_attempts - 1)
             if sudo_max_attempts > 0
             else (None, None, False)
         )
@@ -88,9 +88,9 @@ def get_sudo_pass(file: str, sudo_max_attempts: int = 3):
     elif sudo_behaviour_status == 4:
         return None, None, False  # Skip only current file
 
-    log("Error: Invalid input")
+    log("Error: Invalid input, please enter a number between 1 and 4.")
     return (
-        get_sudo_pass(file, sudo_max_attempts - 1)
+        get_sudo_pass(path, sudo_max_attempts - 1)
         if sudo_max_attempts > 0
         else (None, None, False)
     )
