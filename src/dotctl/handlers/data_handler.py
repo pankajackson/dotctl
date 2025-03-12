@@ -119,25 +119,20 @@ def copy(source: Path, dest: Path, skip_sudo=False, sudo_pass=None):
     try:
         source_exists = source.exists()
         is_dir = source.is_dir()
+        if source_exists:
+            assert source != dest, "Source and destination can't be the same"
+            rsync(source, dest, sudo_pass or temp_pass, is_dir=is_dir)
     except PermissionError:
-        if not skip_sudo:
-            temp_pass, sudo_pass, skip_sudo = get_sudo_pass(source)
+        if skip_sudo:
+            log(f"PermissionError: skipping {source}")
+        else:
+            if not temp_pass and not sudo_pass:
+                temp_pass, sudo_pass, skip_sudo = get_sudo_pass(source)
             success, _, _ = run_command(f"ls {source}", temp_pass or sudo_pass)
             source_exists = success
             _, _, exit_code = run_command(f"test -d {source}", temp_pass or sudo_pass)
             is_dir = exit_code == 0
-        else:
-            return skip_sudo, sudo_pass
-    if not source_exists:
-        return skip_sudo, sudo_pass
 
-    assert source != dest, "Source and destination can't be the same"
-
-    try:
-        rsync(source, dest, sudo_pass or temp_pass, is_dir=is_dir)
-    except subprocess.CalledProcessError:
-        if not skip_sudo:
-            temp_pass, sudo_pass, skip_sudo = get_sudo_pass(source)
-            rsync(source, dest, temp_pass or sudo_pass, is_dir=is_dir)
-    # print(skip_sudo, sudo_pass)
+            if source_exists:
+                rsync(source, dest, temp_pass or sudo_pass, is_dir=is_dir)
     return skip_sudo, sudo_pass
