@@ -99,7 +99,7 @@ def main():
         dot_ctl_obj = DotCtl(
             action=action,
             skip_sudo=args.skip_sudo,
-            profile=args.password,
+            password=args.password,
         )
         dot_ctl_obj.run()
 
