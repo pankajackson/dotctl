@@ -58,7 +58,7 @@ def rsync(
     return stdout.strip()  # Return output for debugging
 
 
-def get_sudo_pass(file, sudo_max_attempts=3):
+def get_sudo_pass(file: str, sudo_max_attempts: int = 3):
     """Prompt for sudo password and handle user choices."""
     print(f"Required sudo to process {file}")
     print("Please select one option from the list:")
@@ -96,7 +96,7 @@ def get_sudo_pass(file, sudo_max_attempts=3):
     )
 
 
-def run_command(command, sudo_pass: str | None = None):
+def run_command(command: str, sudo_pass: str | None = None):
     """Runs a shell command and returns success status, output, and exit code."""
     if sudo_pass:
         command = f"echo {sudo_pass} | sudo -S {command}"
