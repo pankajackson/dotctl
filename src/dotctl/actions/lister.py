@@ -190,7 +190,7 @@ def get_profile_meta(profile_dir: Path = Path(app_profile_directory)):
 @exception_handler
 def get_profile_list(props: ListerProps):
     if not props.profile_dir.exists():
-        log(f"Profile not yet initialized, run `{__APP_NAME__} init` first.")
+        log(f"Profile repo not yet initialized, run `{__APP_NAME__} init` first.")
         sys.exit(1)
 
     try:
@@ -275,6 +275,6 @@ def get_profile_list(props: ListerProps):
     except GitCommandError as e:
         log(f"Git command error: {e}")
     except InvalidGitRepositoryError as e:
-        log(f"Profile not yet initialized, run `{__APP_NAME__} init` first.")
+        log(f"Profile repo not yet initialized, run `{__APP_NAME__} init` first.")
     except Exception as e:
         raise Exception(f"Unexpected error: {e}")

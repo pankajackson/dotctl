@@ -5,6 +5,7 @@ from dotctl.utils import log
 from dotctl.handlers.config_handler import conf_initializer
 from git import Repo, GitCommandError
 from dotctl.exception import exception_handler
+from dotctl import __DEFAULT_PROFILE__
 
 
 @dataclass
@@ -47,7 +48,7 @@ def initialise(props: InitializerProps):
 
         # Ensure a default branch exists
         if not list(dest.glob(".git/refs/heads/*")):  # Check if any branch exists
-            default_branch = props.profile if props.profile else "main"
+            default_branch = props.profile if props.profile else __DEFAULT_PROFILE__
             log(f"Setting up default branch '{default_branch}'...")
             repo.git.checkout("-b", default_branch)
 
