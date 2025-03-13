@@ -1,6 +1,7 @@
 from pathlib import Path
 from enum import Enum, unique
 from dataclasses import dataclass
+import getpass
 from git import Repo, GitCommandError
 from dotctl.paths import app_profile_directory
 from dotctl.utils import log
@@ -146,7 +147,22 @@ def determine_profile_status(
 @exception_handler
 def get_profile_meta(profile_dir: Path = Path(app_profile_directory)):
     repo = Repo(profile_dir)
+
+    if repo.bare:
+        return ProfileMetaData(
+            repo_name=profile_dir.name,
+            owner=getpass.getuser(),
+            last_commit_author="No commits",
+        )
+
     remote_url = repo.remotes.origin.url if repo.remotes else "No remote"
+
+    try:
+        last_commit = repo.head.commit
+        last_commit_author = last_commit.author.name or "Unknown"
+    except ValueError:  # Handles empty repos (no commits yet)
+        last_commit_author = "No commits"
+
     if remote_url != "No remote":
         if remote_url.startswith("git@"):
             repo_name = remote_url.split(":")[-1].replace(".git", "")
@@ -154,19 +170,13 @@ def get_profile_meta(profile_dir: Path = Path(app_profile_directory)):
         else:
             repo_name = remote_url.split("/")[-1].replace(".git", "")
             owner = remote_url.split("/")[-2]
-
-        repo_name = (
-            repo_name.replace(".git", "")
-            if remote_url != "No remote"
-            else profile_dir.name
-        )
-        last_commit = repo.head.commit
-        last_commit_author = last_commit.author.name or owner
     else:
         repo_name = profile_dir.name
-        owner = "Unknown"
-        # FIXME: fetch last commit author from local repo
-        last_commit_author = "Unknown"
+        owner = (
+            last_commit_author
+            if last_commit_author != "No commits"
+            else getpass.getuser()
+        )
 
     return ProfileMetaData(
         repo_name=repo_name,
