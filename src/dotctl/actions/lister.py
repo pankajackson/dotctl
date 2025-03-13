@@ -19,7 +19,7 @@ lister_default_props = ListerProps(
 
 profile_meta = {
     "active": {
-        "icon": "✅",
+        "icon": "🟢",
         "title": "Active",
         "desc": "Active Profile",
     },
@@ -29,32 +29,32 @@ profile_meta = {
         "desc": "Inactive Profile",
     },
     "local_remote": {
-        "icon": "",
+        "icon": "✅",
         "title": "Synced",
         "desc": "Profile Synced with Cloud",
     },
     "local_only": {
-        "icon": "󰟒",
+        "icon": "💻",
         "title": "Self-Managed",
         "desc": "Locally managed profile available only on this machine",
     },
     "remote_only": {
-        "icon": "",
+        "icon": "⛅",
         "title": "Cloud",
-        "desc": "Other profile available on cloud, not on this machine",
+        "desc": "Profile available on cloud, not on this machine",
     },
     "stale_remote": {
-        "icon": "󰄛",
+        "icon": "📦",
         "title": "Archived",
         "desc": "Previously available profile, may be outdated",
     },
     "behind_remote": {
-        "icon": "󰯉",
+        "icon": "⬇️",
         "title": "Update Available",
         "desc": "Newer version of this profile is available on cloud",
     },
     "ahead_remote": {
-        "icon": "󰗡",
+        "icon": "⬆️",
         "title": "Locally Updated",
         "desc": "This profile has local updates not yet synced",
     },
@@ -124,9 +124,9 @@ def get_profile_list(props: ListerProps):
             title = profile_meta[profile_type]["title"]
             desc = profile_meta[profile_type]["desc"]
 
-            profile_str = f"{is_active} {icon} {branch} ({title})"
+            profile_str = f"{is_active} {branch} {icon}"
             if props.details:
-                profile_str = f"{profile_str}: {desc}"
+                profile_str = f"{profile_str}: ({title}) - {desc}"
             branch_list.append(profile_str)
 
         print("\n".join(branch_list))
