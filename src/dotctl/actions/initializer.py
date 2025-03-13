@@ -4,6 +4,7 @@ from dotctl.paths import app_profile_directory
 from dotctl.utils import log
 from dotctl.handlers.config_handler import conf_initializer
 from git import Repo, GitCommandError
+from dotctl.exception import exception_handler
 
 
 @dataclass
@@ -24,6 +25,7 @@ initializer_default_props = InitializerProps(
 )
 
 
+@exception_handler
 def initialise(props: InitializerProps):
     log("Initializing...")
 

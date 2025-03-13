@@ -5,6 +5,7 @@ from .arg_manager import get_parser
 from .exception import exception_handler
 from .actions.initializer import initialise, initializer_default_props
 from .actions.saver import save, saver_default_props
+from .actions.lister import get_profile_list, lister_default_props
 
 
 class Action(Enum):
@@ -29,6 +30,8 @@ class DotCtl:
         env: str | None = None,
         skip_sudo: bool = False,
         password: str | None = None,
+        details: bool = False,
+        fetch: bool = False,
         *args,
         **kwargs,
     ):
@@ -39,12 +42,16 @@ class DotCtl:
         self.env = str(env) if env else None
         self.skip_sudo = skip_sudo
         self.password = password
+        self.details = details
+        self.fetch = fetch
 
     def run(self):
         if self.action == Action.init:
             self.init()
         elif self.action == Action.save:
             self.save()
+        elif self.action == Action.list:
+            self.list_profiles()
 
     def init(self):
         initializer_props_dict = {}
@@ -70,6 +77,15 @@ class DotCtl:
             saver_props_dict["password"] = self.password
         saver_props = replace(saver_default_props, **saver_props_dict)
         save(saver_props)
+
+    def list_profiles(self):
+        lister_props_dict = {}
+        if self.details:
+            lister_props_dict["details"] = self.details
+        if self.fetch:
+            lister_props_dict["fetch"] = self.fetch
+        lister_props = replace(lister_default_props, **lister_props_dict)
+        get_profile_list(lister_props)
 
 
 @exception_handler
@@ -100,6 +116,13 @@ def main():
             action=action,
             skip_sudo=args.skip_sudo,
             password=args.password,
+        )
+        dot_ctl_obj.run()
+    elif args.action == "list":
+        dot_ctl_obj = DotCtl(
+            action=action,
+            details=args.details,
+            fetch=args.fetch,
         )
         dot_ctl_obj.run()
 
