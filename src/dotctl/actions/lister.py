@@ -3,10 +3,8 @@ from enum import Enum, unique
 from dataclasses import dataclass
 from git import Repo, GitCommandError
 from dotctl.paths import app_profile_directory
-import logging
-
-# Configure logging for better debugging
-logging.basicConfig(level=logging.ERROR)
+from dotctl.utils import log
+from dotctl.exception import exception_handler
 
 
 @dataclass
@@ -107,7 +105,7 @@ class Profile:
     status: ProfileStatus
     active_status: ProfileActiveStatus
 
-
+@exception_handler
 def determine_profile_status(
     repo: Repo, branch: str, local_branches: set, remote_branches: set
 ) -> ProfileStatus:
@@ -128,11 +126,11 @@ def determine_profile_status(
             repo.git.rev_list(f"origin/{branch}")  # Check if remote exists
             return ProfileStatus.local
     except GitCommandError:
-        # logging.error(f"Error checking status of branch: {branch}")
         return ProfileStatus.local  # More cautious fallback
     return ProfileStatus.local
 
 
+@exception_handler
 def get_profile_list(props: ListerProps):
     try:
         repo = Repo(props.profile_dir)
@@ -145,11 +143,21 @@ def get_profile_list(props: ListerProps):
         local_branches = {branch.name for branch in repo.branches}
 
         try:
-            remote_branches = {
-                ref.name.replace("origin/", "")
-                for ref in repo.remotes.origin.refs
-                if ref.name != "origin/HEAD"
-            }
+            remote_branches = set()
+            if repo.remotes:
+                try:
+                    origin = next(
+                        (remote for remote in repo.remotes if remote.name == "origin"),
+                        None,
+                    )
+                    if origin:
+                        remote_branches = {
+                            ref.name.replace("origin/", "")
+                            for ref in origin.refs
+                            if ref.name != "origin/HEAD"
+                        }
+                except GitCommandError:
+                    remote_branches = set()
         except GitCommandError:
             remote_branches = set()
 
@@ -178,6 +186,6 @@ def get_profile_list(props: ListerProps):
         print("\n".join(branch_list))
 
     except GitCommandError as e:
-        logging.error(f"Git command error: {e}")
+        log(f"Git command error: {e}")
     except Exception as e:
-        logging.error(f"Unexpected error: {e}")
+        log(f"Unexpected error: {e}")
