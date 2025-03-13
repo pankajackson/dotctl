@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from enum import Enum, unique
 from dataclasses import dataclass
@@ -6,6 +7,7 @@ from git import Repo, GitCommandError
 from dotctl.paths import app_profile_directory
 from dotctl.utils import log
 from dotctl.exception import exception_handler
+from dotctl import __APP_NAME__
 
 
 @dataclass
@@ -187,6 +189,10 @@ def get_profile_meta(profile_dir: Path = Path(app_profile_directory)):
 
 @exception_handler
 def get_profile_list(props: ListerProps):
+    if not props.profile_dir.exists():
+        log(f"Profile not yet initialized, run `{__APP_NAME__} init` first.")
+        sys.exit(1)
+
     try:
         repo = Repo(props.profile_dir)
 
