@@ -105,14 +105,15 @@ class Profile:
     status: ProfileStatus
     active_status: ProfileActiveStatus
 
+
 @exception_handler
 def determine_profile_status(
-    repo: Repo, branch: str, local_branches: set, remote_branches: set
+    repo: Repo, profile: str, local_profiles: set, remote_profiles: set
 ) -> ProfileStatus:
     try:
-        if branch in local_branches and branch in remote_branches:
-            ahead = int(repo.git.rev_list(f"origin/{branch}..{branch}", count=True))
-            behind = int(repo.git.rev_list(f"{branch}..origin/{branch}", count=True))
+        if profile in local_profiles and profile in remote_profiles:
+            ahead = int(repo.git.rev_list(f"origin/{profile}..{profile}", count=True))
+            behind = int(repo.git.rev_list(f"{profile}..origin/{profile}", count=True))
 
             if ahead > 0:
                 return ProfileStatus.ahead_remote
@@ -120,10 +121,10 @@ def determine_profile_status(
                 return ProfileStatus.behind_remote
             else:
                 return ProfileStatus.synced  # Fully Synced
-        elif branch in remote_branches:
+        elif profile in remote_profiles:
             return ProfileStatus.remote  # Remote-only profile
-        elif branch in local_branches:
-            repo.git.rev_list(f"origin/{branch}")  # Check if remote exists
+        elif profile in local_profiles:
+            repo.git.rev_list(f"origin/{profile}")  # Check if remote exists
             return ProfileStatus.local
     except GitCommandError:
         return ProfileStatus.local  # More cautious fallback
@@ -136,14 +137,14 @@ def get_profile_list(props: ListerProps):
         repo = Repo(props.profile_dir)
 
         if repo.bare:
-            print("The repository is bare. No branches available.")
+            print("The repository is bare. No profiles available.")
             return
 
-        active_branch = repo.active_branch.name
-        local_branches = {branch.name for branch in repo.branches}
+        active_profile = repo.active_branch.name
+        local_profiles = {profile.name for profile in repo.branches}
 
         try:
-            remote_branches = set()
+            remote_profiles = set()
             if repo.remotes:
                 try:
                     origin = next(
@@ -151,39 +152,39 @@ def get_profile_list(props: ListerProps):
                         None,
                     )
                     if origin:
-                        remote_branches = {
+                        remote_profiles = {
                             ref.name.replace("origin/", "")
                             for ref in origin.refs
                             if ref.name != "origin/HEAD"
                         }
                 except GitCommandError:
-                    remote_branches = set()
+                    remote_profiles = set()
         except GitCommandError:
-            remote_branches = set()
+            remote_profiles = set()
 
-        all_branches = local_branches | remote_branches | {active_branch}
+        all_profiles = local_profiles | remote_profiles | {active_profile}
 
-        branch_list = [
-            f"{active_status.value.icon} {branch} {profile_status.value.icon}"
+        profile_list = [
+            f"{active_status.value.icon} {profile} {profile_status.value.icon}"
             + (
                 f": ({profile_status.value.title}) - {profile_status.value.desc}"
                 if props.details
                 else ""
             )
-            for branch in all_branches
+            for profile in all_profiles
             for active_status in [
                 (
                     ProfileActiveStatus.active
-                    if branch == active_branch
+                    if profile == active_profile
                     else ProfileActiveStatus.not_active
                 )
             ]
             for profile_status in [
-                determine_profile_status(repo, branch, local_branches, remote_branches)
+                determine_profile_status(repo, profile, local_profiles, remote_profiles)
             ]
         ]
 
-        print("\n".join(branch_list))
+        print("\n".join(profile_list))
 
     except GitCommandError as e:
         log(f"Git command error: {e}")
