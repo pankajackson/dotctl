@@ -44,11 +44,32 @@ def get_profile_list(profile_dir: Path = Path(app_profile_directory)):
 
             # Determine icon based on branch status
             if branch in local_branches and branch in remote_branches:
-                icon = ICONS["local_remote"]  # Synced (Local & Remote)
+                # Check if the branch is ahead/behind
+                try:
+                    ahead_behind = repo.git.rev_list(
+                        f"origin/{branch}..{branch}", count=True
+                    )
+                    behind_ahead = repo.git.rev_list(
+                        f"{branch}..origin/{branch}", count=True
+                    )
+
+                    if int(ahead_behind) > 0:
+                        icon = ICONS["ahead_remote"]  # Local is ahead
+                    elif int(behind_ahead) > 0:
+                        icon = ICONS["behind_remote"]  # Local is behind
+                    else:
+                        icon = ICONS["local_remote"]  # Synced
+                except GitCommandError:
+                    icon = ICONS["local_remote"]  # Default to synced
             elif branch in remote_branches:
                 icon = ICONS["remote_only"]  # Remote Only (Cloud)
-            else:
-                icon = ICONS["local_only"]  # Local Only (Self-Managed)
+            elif branch in local_branches:
+                # Check if it's a stale remote branch (deleted remotely)
+                try:
+                    repo.git.rev_list(f"origin/{branch}")
+                    icon = ICONS["local_only"]  # Still exists remotely
+                except GitCommandError:
+                    icon = ICONS["stale_remote"]  # Stale Remote (Deleted Remotely)
 
             branch_list.append(f"{is_active} {icon} {branch}")
 
