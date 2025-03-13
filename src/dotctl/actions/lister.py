@@ -4,15 +4,47 @@ from git import Repo, GitCommandError
 from tabulate import tabulate
 
 
-ICONS = {
-    "active": "✅",  # Active branch checkmark
-    "inactive": "➖",  # Inactive branch dash
-    "local_remote": "",  # Synced (Local & Remote)
-    "local_only": "󰟒",  # Local Only (Self-Managed)
-    "remote_only": "",  # Remote Only (Cloud)
-    "stale_remote": "󰄛",  # Stale Remote (Old remote branch)
-    "behind_remote": "󰯉",  # Local behind Remote
-    "ahead_remote": "󰗡",  # Local ahead of Remote
+profile_meta = {
+    "active": {
+        "icon": "✅",
+        "title": "Active",
+        "desc": "Active Profile",
+    },
+    "not_active": {
+        "icon": "➖",
+        "title": "Inactive",
+        "desc": "Inactive Profile",
+    },
+    "local_remote": {
+        "icon": "",
+        "title": "Synced (Local & Remote)",
+        "desc": "Synced Profile available both locally & remotely",
+    },
+    "local_only": {
+        "icon": "󰟒",
+        "title": "Self-Managed (Only Local)",
+        "desc": "Profile available only on this machine",
+    },
+    "remote_only": {
+        "icon": "",
+        "title": "Cloud-Available",
+        "desc": "Profile stored remotely, not on this machine",
+    },
+    "stale_remote": {
+        "icon": "󰄛",
+        "title": "Archived",
+        "desc": "Previously available profile, may be outdated",
+    },
+    "behind_remote": {
+        "icon": "󰯉",
+        "title": "Update Available",
+        "desc": "Newer version of this profile is available",
+    },
+    "ahead_remote": {
+        "icon": "󰗡",
+        "title": "Locally Updated",
+        "desc": "This profile has local updates not yet synced",
+    },
 }
 
 
@@ -39,10 +71,12 @@ def get_profile_list(profile_dir: Path = Path(app_profile_directory)):
         branch_list = []
         for branch in local_branches | remote_branches | {active_branch}:
             is_active = (
-                ICONS["active"] if branch == active_branch else ICONS["inactive"]
+                profile_meta["active"]["icon"]
+                if branch == active_branch
+                else profile_meta["not_active"]["icon"]
             )
 
-            # Determine icon based on branch status
+            # Determine profile type
             if branch in local_branches and branch in remote_branches:
                 # Check if the branch is ahead/behind
                 try:
@@ -54,24 +88,28 @@ def get_profile_list(profile_dir: Path = Path(app_profile_directory)):
                     )
 
                     if int(ahead_behind) > 0:
-                        icon = ICONS["ahead_remote"]  # Local is ahead
+                        profile_type = "ahead_remote"  # Local is ahead
                     elif int(behind_ahead) > 0:
-                        icon = ICONS["behind_remote"]  # Local is behind
+                        profile_type = "behind_remote"  # Local is behind
                     else:
-                        icon = ICONS["local_remote"]  # Synced
+                        profile_type = "local_remote"  # Synced
                 except GitCommandError:
-                    icon = ICONS["local_remote"]  # Default to synced
+                    profile_type = "local_remote"  # Default to synced
             elif branch in remote_branches:
-                icon = ICONS["remote_only"]  # Remote Only (Cloud)
+                profile_type = "remote_only"  # Remote Only (Cloud)
             elif branch in local_branches:
                 # Check if it's a stale remote branch (deleted remotely)
                 try:
                     repo.git.rev_list(f"origin/{branch}")
-                    icon = ICONS["local_only"]  # Still exists remotely
+                    profile_type = "local_only"  # Still exists remotely
                 except GitCommandError:
-                    icon = ICONS["stale_remote"]  # Stale Remote (Deleted Remotely)
+                    profile_type = "stale_remote"  # Stale Remote (Deleted Remotely)
 
-            branch_list.append(f"{is_active} {icon} {branch}")
+            icon = profile_meta[profile_type]["icon"]
+            title = profile_meta[profile_type]["title"]
+            desc = profile_meta[profile_type]["desc"]
+
+            branch_list.append(f"{is_active} {icon} {branch} - {title}: {desc}")
 
         print("\n".join(branch_list))
 
