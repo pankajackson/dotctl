@@ -1,9 +1,12 @@
 from pathlib import Path
-from enum import Enum
+from enum import Enum, unique
 from dataclasses import dataclass
 from git import Repo, GitCommandError
-from tabulate import tabulate
 from dotctl.paths import app_profile_directory
+import logging
+
+# Configure logging for better debugging
+logging.basicConfig(level=logging.ERROR)
 
 
 @dataclass
@@ -38,6 +41,7 @@ class ProfileStatusProps:
     desc: str
 
 
+@unique
 class ProfileActiveStatus(Enum):
     active = ProfileActiveProps(
         is_active=True,
@@ -49,6 +53,7 @@ class ProfileActiveStatus(Enum):
     )
 
 
+@unique
 class ProfileManager(Enum):
     local = ProfileManagerProps(
         title="Local",
@@ -62,13 +67,14 @@ class ProfileManager(Enum):
     )
 
 
+@unique
 class ProfileStatus(Enum):
-    local = ProfileManagerProps(
+    local = ProfileStatusProps(
         title="Local",
         icon="🏠",
         desc="Profile Managed Locally",
     )
-    remote = ProfileManagerProps(
+    remote = ProfileStatusProps(
         title="Remote",
         icon="🌐",
         desc="Profile Managed Remotely",
@@ -88,7 +94,6 @@ class ProfileStatus(Enum):
         title="Update Available",
         desc="Newer version of this profile is available on cloud",
     )
-
     ahead_remote = ProfileStatusProps(
         icon="⬆️",
         title="Locally Updated",
@@ -99,7 +104,6 @@ class ProfileStatus(Enum):
 @dataclass
 class Profile:
     name: str
-    # manager: ProfileManager
     status: ProfileStatus
     active_status: ProfileActiveStatus
 
@@ -107,9 +111,8 @@ class Profile:
 def determine_profile_status(
     repo: Repo, branch: str, local_branches: set, remote_branches: set
 ) -> ProfileStatus:
-    if branch in local_branches and branch in remote_branches:
-        # Check if the branch is ahead or behind the remote
-        try:
+    try:
+        if branch in local_branches and branch in remote_branches:
             ahead = int(repo.git.rev_list(f"origin/{branch}..{branch}", count=True))
             behind = int(repo.git.rev_list(f"{branch}..origin/{branch}", count=True))
 
@@ -119,18 +122,14 @@ def determine_profile_status(
                 return ProfileStatus.behind_remote
             else:
                 return ProfileStatus.synced  # Fully Synced
-        except GitCommandError:
-            return ProfileStatus.synced  # Assume synced if error occurs
-    elif branch in remote_branches:
-        return ProfileStatus.remote  # Remote-only profile
-    elif branch in local_branches:
-        try:
-            repo.git.rev_list(f"origin/{branch}")
-        except GitCommandError:
-            return (
-                ProfileStatus.stale_remote
-            )  # Remote branch deleted, local copy exists
-        return ProfileStatus.local
+        elif branch in remote_branches:
+            return ProfileStatus.remote  # Remote-only profile
+        elif branch in local_branches:
+            repo.git.rev_list(f"origin/{branch}")  # Check if remote exists
+            return ProfileStatus.local
+    except GitCommandError:
+        # logging.error(f"Error checking status of branch: {branch}")
+        return ProfileStatus.local  # More cautious fallback
     return ProfileStatus.local
 
 
@@ -154,39 +153,31 @@ def get_profile_list(props: ListerProps):
         except GitCommandError:
             remote_branches = set()
 
-        branch_list = []
         all_branches = local_branches | remote_branches | {active_branch}
 
-        for branch in all_branches:
-            active_status = (
-                ProfileActiveStatus.active
-                if branch == active_branch
-                else ProfileActiveStatus.not_active
+        branch_list = [
+            f"{active_status.value.icon} {branch} {profile_status.value.icon}"
+            + (
+                f": ({profile_status.value.title}) - {profile_status.value.desc}"
+                if props.details
+                else ""
             )
-
-            profile_status = determine_profile_status(
-                repo, branch, local_branches, remote_branches
-            )
-
-            profile = Profile(
-                active_status=active_status,
-                name=branch,
-                status=profile_status,
-            )
-            is_active = active_status.value.icon
-            icon = profile.status.value.icon
-            title = profile.status.value.title
-            desc = profile.status.value.desc
-
-            profile_str = f"{is_active} {branch} {icon}"
-            if props.details:
-                profile_str += f": ({title}) - {desc}"
-
-            branch_list.append(profile_str)
+            for branch in all_branches
+            for active_status in [
+                (
+                    ProfileActiveStatus.active
+                    if branch == active_branch
+                    else ProfileActiveStatus.not_active
+                )
+            ]
+            for profile_status in [
+                determine_profile_status(repo, branch, local_branches, remote_branches)
+            ]
+        ]
 
         print("\n".join(branch_list))
 
     except GitCommandError as e:
-        print(f"Git command error: {e}")
+        logging.error(f"Git command error: {e}")
     except Exception as e:
-        print(f"Error: {e}")
+        logging.error(f"Unexpected error: {e}")
