@@ -5,11 +5,14 @@ from tabulate import tabulate
 
 
 ICONS = {
-    "active_local_remote": " 󰸞",  # Active branch (exists locally & remotely)
-    "active_local_only": "󰟒 󰸞",  # Active branch (only local)
-    "local_remote": "",  # Exists both locally & remotely
-    "local_only": "󰟒",  # Only local
-    "remote_only": "",  # Only remote
+    "active": "✅",  # Active branch checkmark
+    "inactive": "➖",  # Inactive branch dash
+    "local_remote": "",  # Synced (Local & Remote)
+    "local_only": "󰟒",  # Local Only (Self-Managed)
+    "remote_only": "",  # Remote Only (Cloud)
+    "stale_remote": "󰄛",  # Stale Remote (Old remote branch)
+    "behind_remote": "󰯉",  # Local behind Remote
+    "ahead_remote": "󰗡",  # Local ahead of Remote
 }
 
 
@@ -21,13 +24,9 @@ def get_profile_list(profile_dir: Path = Path(app_profile_directory)):
             print("The repository is bare. No branches available.")
             return
 
-        # Get active branch
         active_branch = repo.active_branch.name
-
-        # Get local branches
         local_branches = {branch.name for branch in repo.branches}
 
-        # Get remote branches (excluding origin/HEAD)
         try:
             remote_branches = {
                 ref.name.replace("origin/", "")
@@ -37,32 +36,23 @@ def get_profile_list(profile_dir: Path = Path(app_profile_directory)):
         except:
             remote_branches = set()
 
-        # Create branch status mapping with icons
-        branch_table = []
-        for branch in (
-            local_branches | remote_branches | {active_branch}
-        ):  # Union of both sets
-            if branch == active_branch:
-                status = (
-                    f"{ICONS['active_local_remote']} Active (Local & Remote)"
-                    if branch in remote_branches
-                    else f"{ICONS['active_local_only']} Active (Local Only)"
-                )
-            elif branch in local_branches and branch in remote_branches:
-                status = f"{ICONS['local_remote']} Local & Remote"
-            elif branch in local_branches:
-                status = f"{ICONS['local_only']} Local Only"
-            else:  # Only in remote
-                status = f"{ICONS['remote_only']} Remote Only"
-
-            branch_table.append([branch, status])
-
-        # Print table with emojis
-        print(
-            tabulate(
-                branch_table, headers=["Profile", "Status"], tablefmt="heavy_grid"
+        branch_list = []
+        for branch in local_branches | remote_branches | {active_branch}:
+            is_active = (
+                ICONS["active"] if branch == active_branch else ICONS["inactive"]
             )
-        )
+
+            # Determine icon based on branch status
+            if branch in local_branches and branch in remote_branches:
+                icon = ICONS["local_remote"]  # Synced (Local & Remote)
+            elif branch in remote_branches:
+                icon = ICONS["remote_only"]  # Remote Only (Cloud)
+            else:
+                icon = ICONS["local_only"]  # Local Only (Self-Managed)
+
+            branch_list.append(f"{is_active} {icon} {branch}")
+
+        print("\n".join(branch_list))
 
     except GitCommandError as e:
         print(f"Git command error: {e}")
