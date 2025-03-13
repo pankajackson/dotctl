@@ -3,7 +3,7 @@ from pathlib import Path
 from enum import Enum, unique
 from dataclasses import dataclass
 import getpass
-from git import Repo, GitCommandError
+from git import Repo, GitCommandError, InvalidGitRepositoryError
 from dotctl.paths import app_profile_directory
 from dotctl.utils import log
 from dotctl.exception import exception_handler
@@ -274,5 +274,7 @@ def get_profile_list(props: ListerProps):
 
     except GitCommandError as e:
         log(f"Git command error: {e}")
+    except InvalidGitRepositoryError as e:
+        log(f"Profile not yet initialized, run `{__APP_NAME__} init` first.")
     except Exception as e:
-        log(f"Unexpected error: {e}")
+        raise Exception(f"Unexpected error: {e}")
