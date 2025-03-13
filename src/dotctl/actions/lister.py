@@ -120,14 +120,14 @@ def determine_profile_status(
             elif behind > 0:
                 return ProfileStatus.behind_remote
             else:
-                return ProfileStatus.synced  # Fully Synced
+                return ProfileStatus.synced
         elif profile in remote_profiles:
-            return ProfileStatus.remote  # Remote-only profile
+            return ProfileStatus.remote
         elif profile in local_profiles:
-            repo.git.rev_list(f"origin/{profile}")  # Check if remote exists
+            repo.git.rev_list(f"origin/{profile}")
             return ProfileStatus.local
     except GitCommandError:
-        return ProfileStatus.local  # More cautious fallback
+        return ProfileStatus.local
     return ProfileStatus.local
 
 
@@ -165,26 +165,30 @@ def get_profile_list(props: ListerProps):
         all_profiles = local_profiles | remote_profiles | {active_profile}
 
         profile_list = [
-            f"{active_status.value.icon} {profile} {profile_status.value.icon}"
-            + (
-                f": ({profile_status.value.title}) - {profile_status.value.desc}"
-                if props.details
-                else ""
-            )
-            for profile in all_profiles
-            for active_status in [
-                (
+            Profile(
+                name=profile,
+                status=determine_profile_status(
+                    repo=repo,
+                    profile=profile,
+                    local_profiles=local_profiles,
+                    remote_profiles=remote_profiles,
+                ),
+                active_status=(
                     ProfileActiveStatus.active
                     if profile == active_profile
                     else ProfileActiveStatus.not_active
-                )
-            ]
-            for profile_status in [
-                determine_profile_status(repo, profile, local_profiles, remote_profiles)
-            ]
+                ),
+            )
+            for profile in all_profiles
         ]
 
-        print("\n".join(profile_list))
+        profile_list_string = " \n".join(
+            [
+                f"  {profile.active_status.value.icon} {profile.name} {profile.status.value.icon}"
+                for profile in profile_list
+            ]
+        )
+        print(f"Profiles:\n{profile_list_string}")
 
     except GitCommandError as e:
         log(f"Git command error: {e}")
