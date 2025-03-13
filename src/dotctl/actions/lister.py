@@ -179,7 +179,7 @@ def get_profile_list(props: ListerProps):
                     else ProfileActiveStatus.not_active
                 ),
             )
-            for profile in all_profiles
+            for profile in sorted(all_profiles)
         ]
 
         profile_list_string = " \n".join(
