@@ -1,7 +1,20 @@
 from pathlib import Path
-from dotctl.paths import app_profile_directory
+from dataclasses import dataclass
 from git import Repo, GitCommandError
 from tabulate import tabulate
+from dotctl.paths import app_profile_directory
+
+
+@dataclass
+class ListerProps:
+    profile_dir: Path
+    details: bool
+
+
+lister_default_props = ListerProps(
+    Path(app_profile_directory),
+    details=False,
+)
 
 
 profile_meta = {
@@ -17,18 +30,18 @@ profile_meta = {
     },
     "local_remote": {
         "icon": "",
-        "title": "Synced (Local & Remote)",
-        "desc": "Synced Profile available both locally & remotely",
+        "title": "Synced",
+        "desc": "Profile Synced with Cloud",
     },
     "local_only": {
         "icon": "󰟒",
-        "title": "Self-Managed (Only Local)",
-        "desc": "Profile available only on this machine",
+        "title": "Self-Managed",
+        "desc": "Locally managed profile available only on this machine",
     },
     "remote_only": {
         "icon": "",
-        "title": "Cloud-Available",
-        "desc": "Profile stored remotely, not on this machine",
+        "title": "Cloud",
+        "desc": "Other profile available on cloud, not on this machine",
     },
     "stale_remote": {
         "icon": "󰄛",
@@ -38,7 +51,7 @@ profile_meta = {
     "behind_remote": {
         "icon": "󰯉",
         "title": "Update Available",
-        "desc": "Newer version of this profile is available",
+        "desc": "Newer version of this profile is available on cloud",
     },
     "ahead_remote": {
         "icon": "󰗡",
@@ -48,9 +61,9 @@ profile_meta = {
 }
 
 
-def get_profile_list(profile_dir: Path = Path(app_profile_directory)):
+def get_profile_list(props: ListerProps):
     try:
-        repo = Repo(profile_dir)
+        repo = Repo(props.profile_dir)
 
         if repo.bare:
             print("The repository is bare. No branches available.")
@@ -111,7 +124,10 @@ def get_profile_list(profile_dir: Path = Path(app_profile_directory)):
             title = profile_meta[profile_type]["title"]
             desc = profile_meta[profile_type]["desc"]
 
-            branch_list.append(f"{is_active} {icon} {branch} - {title}: {desc}")
+            profile_str = f"{is_active} {icon} {branch} ({title})"
+            if props.details:
+                profile_str = f"{profile_str}: {desc}"
+            branch_list.append(profile_str)
 
         print("\n".join(branch_list))
 

@@ -5,7 +5,7 @@ from .arg_manager import get_parser
 from .exception import exception_handler
 from .actions.initializer import initialise, initializer_default_props
 from .actions.saver import save, saver_default_props
-from .actions.lister import get_profile_list
+from .actions.lister import get_profile_list, lister_default_props
 
 
 class Action(Enum):
@@ -30,6 +30,7 @@ class DotCtl:
         env: str | None = None,
         skip_sudo: bool = False,
         password: str | None = None,
+        details: bool = False,
         *args,
         **kwargs,
     ):
@@ -40,6 +41,7 @@ class DotCtl:
         self.env = str(env) if env else None
         self.skip_sudo = skip_sudo
         self.password = password
+        self.details = details
 
     def run(self):
         if self.action == Action.init:
@@ -75,7 +77,11 @@ class DotCtl:
         save(saver_props)
 
     def list_profiles(self):
-        get_profile_list()
+        lister_props_dict = {}
+        if self.details:
+            lister_props_dict["details"] = self.details
+        lister_props = replace(lister_default_props, **lister_props_dict)
+        get_profile_list(lister_props)
 
 
 @exception_handler
@@ -109,7 +115,10 @@ def main():
         )
         dot_ctl_obj.run()
     elif args.action == "list":
-        dot_ctl_obj = DotCtl(action=action)
+        dot_ctl_obj = DotCtl(
+            action=action,
+            details=args.details,
+        )
         dot_ctl_obj.run()
 
 

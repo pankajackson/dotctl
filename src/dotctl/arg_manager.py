@@ -75,4 +75,10 @@ def get_parser() -> argparse.ArgumentParser:
     list_parser = subparsers.add_parser(
         "list", aliases=["ls"], help="Lists created profiles"
     )
+    list_parser.add_argument(
+        "--details",
+        required=False,
+        action="store_true",
+        help="Display detailed profile information, including status and sync state.",
+    )
     return parser
