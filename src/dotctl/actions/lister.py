@@ -184,7 +184,11 @@ def get_profile_list(props: ListerProps):
 
         profile_list_string = " \n".join(
             [
-                f"  {profile.active_status.value.icon} {profile.name} {profile.status.value.icon}"
+                (
+                    f"  {profile.active_status.value.icon} {profile.name} {profile.status.value.icon}"
+                    if not props.details
+                    else f"  {profile.active_status.value.icon} {profile.name} {profile.status.value.icon} ({profile.status.value.title}) - {profile.status.value.desc}"
+                )
                 for profile in profile_list
             ]
         )
