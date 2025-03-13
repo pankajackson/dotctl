@@ -81,4 +81,10 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Display detailed profile information, including status and sync state.",
     )
+    list_parser.add_argument(
+        "--fetch",
+        required=False,
+        action="store_true",
+        help="Fetch and Sync profile information from Cloud",
+    )
     return parser

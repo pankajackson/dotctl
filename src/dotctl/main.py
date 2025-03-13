@@ -31,6 +31,7 @@ class DotCtl:
         skip_sudo: bool = False,
         password: str | None = None,
         details: bool = False,
+        fetch: bool = False,
         *args,
         **kwargs,
     ):
@@ -42,6 +43,7 @@ class DotCtl:
         self.skip_sudo = skip_sudo
         self.password = password
         self.details = details
+        self.fetch = fetch
 
     def run(self):
         if self.action == Action.init:
@@ -80,6 +82,8 @@ class DotCtl:
         lister_props_dict = {}
         if self.details:
             lister_props_dict["details"] = self.details
+        if self.fetch:
+            lister_props_dict["fetch"] = self.fetch
         lister_props = replace(lister_default_props, **lister_props_dict)
         get_profile_list(lister_props)
 
@@ -118,6 +122,7 @@ def main():
         dot_ctl_obj = DotCtl(
             action=action,
             details=args.details,
+            fetch=args.fetch,
         )
         dot_ctl_obj.run()
 

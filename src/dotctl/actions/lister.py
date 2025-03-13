@@ -11,11 +11,13 @@ from dotctl.exception import exception_handler
 class ListerProps:
     profile_dir: Path
     details: bool
+    fetch: bool
 
 
 lister_default_props = ListerProps(
     Path(app_profile_directory),
     details=False,
+    fetch=False,
 )
 
 
@@ -37,6 +39,13 @@ class ProfileStatusProps:
     title: str
     icon: str
     desc: str
+
+
+@dataclass
+class ProfileMetaData:
+    repo_name: str
+    owner: str
+    last_commit_author: str
 
 
 @unique
@@ -135,6 +144,38 @@ def determine_profile_status(
 
 
 @exception_handler
+def get_profile_meta(profile_dir: Path = Path(app_profile_directory)):
+    repo = Repo(profile_dir)
+    remote_url = repo.remotes.origin.url if repo.remotes else "No remote"
+    if remote_url != "No remote":
+        if remote_url.startswith("git@"):
+            repo_name = remote_url.split(":")[-1].replace(".git", "")
+            owner = remote_url.split(":")[-1].split("/")[0]
+        else:
+            repo_name = remote_url.split("/")[-1].replace(".git", "")
+            owner = remote_url.split("/")[-2]
+
+        repo_name = (
+            repo_name.replace(".git", "")
+            if remote_url != "No remote"
+            else profile_dir.name
+        )
+        last_commit = repo.head.commit
+        last_commit_author = last_commit.author.name or owner
+    else:
+        repo_name = profile_dir.name
+        owner = "Unknown"
+        # FIXME: fetch last commit author from local repo
+        last_commit_author = "Unknown"
+
+    return ProfileMetaData(
+        repo_name=repo_name,
+        owner=owner,
+        last_commit_author=last_commit_author,
+    )
+
+
+@exception_handler
 def get_profile_list(props: ListerProps):
     try:
         repo = Repo(props.profile_dir)
@@ -143,15 +184,17 @@ def get_profile_list(props: ListerProps):
             print("The repository is bare. No profiles available.")
             return
 
-        try:
-            if repo.remotes:
-                origin = next(
-                    (remote for remote in repo.remotes if remote.name == "origin"), None
-                )
-                if origin:
-                    origin.fetch(prune=True)  # Fetch and prune deleted branches
-        except GitCommandError as e:
-            log(f"Failed to fetch remote: {e}")
+        if props.fetch:
+            try:
+                if repo.remotes:
+                    origin = next(
+                        (remote for remote in repo.remotes if remote.name == "origin"),
+                        None,
+                    )
+                    if origin:
+                        origin.fetch(prune=True)
+            except GitCommandError as e:
+                log(f"Failed to fetch remote: {e}")
 
         active_profile = repo.active_branch.name
         local_profiles = {profile.name for profile in repo.branches}
@@ -206,6 +249,12 @@ def get_profile_list(props: ListerProps):
             ]
         )
         print(f"Profiles:\n{profile_list_string}")
+        if props.details:
+            profile_meta = get_profile_meta()
+            print("-" * 40)
+            print(f"Repository: {profile_meta.repo_name}")
+            print(f"Owner: {profile_meta.owner}")
+            print(f"Last Commit Author: {profile_meta.last_commit_author}")
 
     except GitCommandError as e:
         log(f"Git command error: {e}")
