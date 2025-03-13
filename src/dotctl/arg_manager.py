@@ -70,4 +70,9 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip all sudo operations",
     )
+
+    # List Parser
+    list_parser = subparsers.add_parser(
+        "list", aliases=["ls"], help="Lists created profiles"
+    )
     return parser

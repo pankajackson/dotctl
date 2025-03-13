@@ -5,6 +5,7 @@ from .arg_manager import get_parser
 from .exception import exception_handler
 from .actions.initializer import initialise, initializer_default_props
 from .actions.saver import save, saver_default_props
+from .actions.lister import get_profile_list
 
 
 class Action(Enum):
@@ -45,6 +46,8 @@ class DotCtl:
             self.init()
         elif self.action == Action.save:
             self.save()
+        elif self.action == Action.list:
+            self.list_profiles()
 
     def init(self):
         initializer_props_dict = {}
@@ -70,6 +73,9 @@ class DotCtl:
             saver_props_dict["password"] = self.password
         saver_props = replace(saver_default_props, **saver_props_dict)
         save(saver_props)
+
+    def list_profiles(self):
+        get_profile_list()
 
 
 @exception_handler
@@ -101,6 +107,9 @@ def main():
             skip_sudo=args.skip_sudo,
             password=args.password,
         )
+        dot_ctl_obj.run()
+    elif args.action == "list":
+        dot_ctl_obj = DotCtl(action=action)
         dot_ctl_obj.run()
 
 
