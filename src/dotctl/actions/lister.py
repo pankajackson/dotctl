@@ -124,8 +124,11 @@ def determine_profile_status(
         elif profile in remote_profiles:
             return ProfileStatus.remote
         elif profile in local_profiles:
-            repo.git.rev_list(f"origin/{profile}")
-            return ProfileStatus.local
+            try:
+                repo.git.rev_list(f"origin/{profile}")
+                return ProfileStatus.local
+            except GitCommandError:
+                return ProfileStatus.stale_remote
     except GitCommandError:
         return ProfileStatus.local
     return ProfileStatus.local
@@ -139,6 +142,16 @@ def get_profile_list(props: ListerProps):
         if repo.bare:
             print("The repository is bare. No profiles available.")
             return
+
+        try:
+            if repo.remotes:
+                origin = next(
+                    (remote for remote in repo.remotes if remote.name == "origin"), None
+                )
+                if origin:
+                    origin.fetch(prune=True)  # Fetch and prune deleted branches
+        except GitCommandError as e:
+            log(f"Failed to fetch remote: {e}")
 
         active_profile = repo.active_branch.name
         local_profiles = {profile.name for profile in repo.branches}
