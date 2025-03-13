@@ -76,6 +76,9 @@ def get_profile_list(profile_dir: Path = Path(app_profile_directory)):
                 else profile_meta["not_active"]["icon"]
             )
 
+            # Default profile
+            profile_type = "local_only"
+
             # Determine profile type
             if branch in local_branches and branch in remote_branches:
                 # Check if the branch is ahead/behind
@@ -101,7 +104,6 @@ def get_profile_list(profile_dir: Path = Path(app_profile_directory)):
                 # Check if it's a stale remote branch (deleted remotely)
                 try:
                     repo.git.rev_list(f"origin/{branch}")
-                    profile_type = "local_only"  # Still exists remotely
                 except GitCommandError:
                     profile_type = "stale_remote"  # Stale Remote (Deleted Remotely)
 
