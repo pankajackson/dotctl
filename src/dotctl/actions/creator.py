@@ -24,6 +24,10 @@ creator_default_props = CreatorProps(
 
 @exception_handler
 def create(props: CreatorProps):
+    log("Creating profile...")
+    if not props.profile_dir.exists():
+        log(f"Profile repo not yet initialized, run `{__APP_NAME__} init` first.")
+        sys.exit(1)
     try:
         repo = Repo(props.profile_dir)
 
@@ -59,13 +63,18 @@ def create(props: CreatorProps):
             return
 
         # Create a new branch and switch to it
+        has_commits = repo.head.is_valid() if repo.head else False
+        if not has_commits:
+            repo.index.commit("Initial commit for dotctl")
+            log("Initial commit created.")
+
         new_branch = repo.create_head(props.profile)
         new_branch.checkout()
         log(f"Profile '{props.profile}' created and activated successfully.")
 
     except GitCommandError as e:
         log(f"Git command error: {e}")
-    except InvalidGitRepositoryError as e:
+    except InvalidGitRepositoryError:
         log(f"Profile repo not yet initialized, run `{__APP_NAME__} init` first.")
     except Exception as e:
         raise Exception(f"Unexpected error: {e}")

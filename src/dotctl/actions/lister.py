@@ -188,6 +188,7 @@ def get_profile_meta(profile_dir: Path = Path(app_profile_directory)):
 
 @exception_handler
 def get_profile_list(props: ListerProps):
+    log("Fetching profiles...")
     if not props.profile_dir.exists():
         log(f"Profile repo not yet initialized, run `{__APP_NAME__} init` first.")
         sys.exit(1)
