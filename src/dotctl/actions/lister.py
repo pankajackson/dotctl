@@ -136,11 +136,10 @@ def determine_profile_status(
         elif profile in remote_profiles:
             return ProfileStatus.remote
         elif profile in local_profiles:
-            try:
-                repo.git.rev_list(f"origin/{profile}")
-                return ProfileStatus.local
-            except GitCommandError:
+            if repo.remotes:
                 return ProfileStatus.stale_remote
+            else:
+                return ProfileStatus.local
     except GitCommandError:
         return ProfileStatus.local
     return ProfileStatus.local
