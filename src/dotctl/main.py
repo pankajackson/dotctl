@@ -6,6 +6,7 @@ from .exception import exception_handler
 from .actions.initializer import initialise, initializer_default_props
 from .actions.saver import save, saver_default_props
 from .actions.lister import get_profile_list, lister_default_props
+from .actions.switcher import switch, switcher_default_props
 
 
 class Action(Enum):
@@ -47,13 +48,15 @@ class DotCtl:
 
     def run(self):
         if self.action == Action.init:
-            self.init()
+            self.init_profile()
         elif self.action == Action.save:
-            self.save()
+            self.save_dots()
         elif self.action == Action.list:
             self.list_profiles()
+        elif self.action == Action.switch:
+            self.switch_profile()
 
-    def init(self):
+    def init_profile(self):
         initializer_props_dict = {}
 
         if self.git_url:
@@ -69,7 +72,7 @@ class DotCtl:
 
         initialise(initializer_props)
 
-    def save(self):
+    def save_dots(self):
         saver_props_dict = {}
         if self.skip_sudo:
             saver_props_dict["skip_sudo"] = self.skip_sudo
@@ -86,6 +89,15 @@ class DotCtl:
             lister_props_dict["fetch"] = self.fetch
         lister_props = replace(lister_default_props, **lister_props_dict)
         get_profile_list(lister_props)
+
+    def switch_profile(self):
+        switcher_props_dict = {}
+        if self.profile:
+            switcher_props_dict["profile"] = self.profile
+        if self.fetch:
+            switcher_props_dict["fetch"] = self.fetch
+        switcher_props = replace(switcher_default_props, **switcher_props_dict)
+        switch(switcher_props)
 
 
 @exception_handler
@@ -122,6 +134,13 @@ def main():
         dot_ctl_obj = DotCtl(
             action=action,
             details=args.details,
+            fetch=args.fetch,
+        )
+        dot_ctl_obj.run()
+    elif args.action == "switch":
+        dot_ctl_obj = DotCtl(
+            action=action,
+            profile=args.profile,
             fetch=args.fetch,
         )
         dot_ctl_obj.run()

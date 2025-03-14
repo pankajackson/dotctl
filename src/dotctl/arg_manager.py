@@ -87,4 +87,22 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Fetch and Sync profile information from Cloud",
     )
+
+    # Switch Parser
+    switch_parser = subparsers.add_parser(
+        "switch", aliases=["sw"], help="Switches between profiles"
+    )
+    switch_parser.add_argument(
+        "profile",
+        nargs="?",  # Makes positional argument optional
+        type=str,
+        help="Profile to switch to",
+        default=None,
+    )
+    switch_parser.add_argument(
+        "--fetch",
+        required=False,
+        action="store_true",
+        help="Fetch and Sync profile information from Cloud before switching to it",
+    )
     return parser
