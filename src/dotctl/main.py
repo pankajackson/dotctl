@@ -36,6 +36,7 @@ class DotCtl:
         password: str | None = None,
         details: bool = False,
         fetch: bool = False,
+        no_confirm: bool = False,
         *args,
         **kwargs,
     ):
@@ -48,6 +49,7 @@ class DotCtl:
         self.password = password
         self.details = details
         self.fetch = fetch
+        self.no_confirm = no_confirm
 
     def run(self):
         if self.action == Action.init:
@@ -121,6 +123,8 @@ class DotCtl:
             remover_props_dict["profile"] = self.profile
         if self.fetch:
             remover_props_dict["fetch"] = self.fetch
+        if self.no_confirm:
+            remover_props_dict["no_confirm"] = self.no_confirm
         remove_props = replace(remover_default_props, **remover_props_dict)
         remove(remove_props)
 
@@ -181,6 +185,7 @@ def main():
             action=action,
             profile=args.profile,
             fetch=args.fetch,
+            no_confirm=args.no_confirm,
         )
         dot_ctl_obj.run()
 

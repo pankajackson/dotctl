@@ -13,12 +13,14 @@ class RemoverProps:
     profile: str
     profile_dir: Path
     fetch: bool
+    no_confirm: bool
 
 
 remover_default_props = RemoverProps(
     profile=__DEFAULT_PROFILE__,
     profile_dir=Path(app_profile_directory),
     fetch=False,
+    no_confirm=False,
 )
 
 
@@ -51,7 +53,7 @@ def remove(props: RemoverProps):
             repo.delete_head(branch_name, force=True)
             log(f"Local profile '{branch_name}' removed successfully.")
         else:
-            log(f"profile '{branch_name}' does not exist locally.")
+            log(f"Profile '{branch_name}' does not exist locally.")
 
         # Delete remote branch if it exists
         if origin is None and repo.remotes:
@@ -62,8 +64,19 @@ def remove(props: RemoverProps):
         if origin:
             remote_branches = [ref.remote_head for ref in origin.refs]
             if branch_name in remote_branches:
-                origin.push(refspec=f":refs/heads/{branch_name}")
-                log(f"Remote profile '{branch_name}' removed successfully.")
+                if props.no_confirm:
+                    origin.push(refspec=f":refs/heads/{branch_name}")
+                    log(f"Remote profile '{branch_name}' removed successfully.")
+                else:
+                    # Ask for confirmation
+                    confirm = input(
+                        f"Are you sure you want to delete remote profile '{branch_name}'? (y/N): "
+                    )
+                    if confirm.lower() == "y":
+                        origin.push(refspec=f":refs/heads/{branch_name}")
+                        log(f"Remote profile '{branch_name}' removed successfully.")
+                    else:
+                        log("Remote profile deletion aborted by user.")
             else:
                 log(f"Profile '{branch_name}' does not exist on cloud.")
         else:

@@ -134,6 +134,14 @@ def get_parser() -> argparse.ArgumentParser:
         default=None,
     )
     create_parser.add_argument(
+        "-y",
+        "--no-confirm",
+        required=False,
+        action="store_true",
+        help="Remove profile from cloud without confirmation",
+        default=False,
+    )
+    create_parser.add_argument(
         "--fetch",
         required=False,
         action="store_true",
