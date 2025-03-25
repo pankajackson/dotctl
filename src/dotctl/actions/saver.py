@@ -23,7 +23,7 @@ saver_default_props = SaverProps(
 
 @exception_handler
 def save(props: SaverProps) -> None:
-    log("saving profile...")
+    log("Saving profile...")
     profile_dir = Path(app_profile_directory)
     if not profile_dir.exists():
         raise RuntimeError(

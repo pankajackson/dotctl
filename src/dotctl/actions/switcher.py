@@ -25,11 +25,7 @@ switcher_default_props = SwitcherProps(
 
 @exception_handler
 def switch(props: SwitcherProps):
-    """
-    Switches to the given branch (profile) if it exists in the local or remote repository.
-    If the profile is None, it switches to the default branch.
-    """
-
+    log("Switching profile...")
     try:
         repo = Repo(props.profile_dir)
     except InvalidGitRepositoryError:

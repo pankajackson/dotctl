@@ -105,4 +105,21 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Fetch and Sync profile information from Cloud before switching to it",
     )
+
+    # Create Parser
+    create_parser = subparsers.add_parser(
+        "create", aliases=["new"], help="Creates a new profile"
+    )
+    create_parser.add_argument(
+        "profile",
+        type=str,
+        help="Profile to create",
+        default=None,
+    )
+    create_parser.add_argument(
+        "--fetch",
+        required=False,
+        action="store_true",
+        help="Fetch and Sync profile information from Cloud before creating it",
+    )
     return parser
