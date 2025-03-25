@@ -8,6 +8,7 @@ from .actions.saver import save, saver_default_props
 from .actions.lister import get_profile_list, lister_default_props
 from .actions.switcher import switch, switcher_default_props
 from .actions.creator import create, creator_default_props
+from .actions.remover import remove, remover_default_props
 
 
 class Action(Enum):
@@ -35,6 +36,7 @@ class DotCtl:
         password: str | None = None,
         details: bool = False,
         fetch: bool = False,
+        no_confirm: bool = False,
         *args,
         **kwargs,
     ):
@@ -47,6 +49,7 @@ class DotCtl:
         self.password = password
         self.details = details
         self.fetch = fetch
+        self.no_confirm = no_confirm
 
     def run(self):
         if self.action == Action.init:
@@ -59,6 +62,8 @@ class DotCtl:
             self.switch_profile()
         elif self.action == Action.create:
             self.create_profile()
+        elif self.action == Action.remove:
+            self.remove_profile()
 
     def init_profile(self):
         initializer_props_dict = {}
@@ -112,6 +117,17 @@ class DotCtl:
         creator_props = replace(creator_default_props, **creator_props_dict)
         create(creator_props)
 
+    def remove_profile(self):
+        remover_props_dict = {}
+        if self.profile:
+            remover_props_dict["profile"] = self.profile
+        if self.fetch:
+            remover_props_dict["fetch"] = self.fetch
+        if self.no_confirm:
+            remover_props_dict["no_confirm"] = self.no_confirm
+        remove_props = replace(remover_default_props, **remover_props_dict)
+        remove(remove_props)
+
 
 @exception_handler
 def main():
@@ -162,6 +178,14 @@ def main():
             action=action,
             profile=args.profile,
             fetch=args.fetch,
+        )
+        dot_ctl_obj.run()
+    elif args.action == "remove":
+        dot_ctl_obj = DotCtl(
+            action=action,
+            profile=args.profile,
+            fetch=args.fetch,
+            no_confirm=args.no_confirm,
         )
         dot_ctl_obj.run()
 

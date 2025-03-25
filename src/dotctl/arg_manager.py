@@ -122,4 +122,29 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Fetch and Sync profile information from Cloud before creating it",
     )
+
+    # Remove Parser
+    remove_parser = subparsers.add_parser(
+        "remove", aliases=["del"], help="Delete existing profile"
+    )
+    remove_parser.add_argument(
+        "profile",
+        type=str,
+        help="Profile to remove",
+        default=None,
+    )
+    remove_parser.add_argument(
+        "-y",
+        "--no-confirm",
+        required=False,
+        action="store_true",
+        help="Remove profile from cloud without confirmation",
+        default=False,
+    )
+    remove_parser.add_argument(
+        "--fetch",
+        required=False,
+        action="store_true",
+        help="Fetch and Sync profile information from Cloud before removing it",
+    )
     return parser
