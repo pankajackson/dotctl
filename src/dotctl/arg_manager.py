@@ -70,6 +70,13 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip all sudo operations",
     )
+    save_parser.add_argument(
+        "profile",
+        nargs="?",  # Makes positional argument optional
+        type=str,
+        help="Profile to save to",
+        default=None,
+    )
 
     # List Parser
     list_parser = subparsers.add_parser(

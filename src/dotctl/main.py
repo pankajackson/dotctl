@@ -87,6 +87,8 @@ class DotCtl:
             saver_props_dict["skip_sudo"] = self.skip_sudo
         if self.password:
             saver_props_dict["password"] = self.password
+        if self.profile:
+            saver_props_dict["profile"] = self.profile
         saver_props = replace(saver_default_props, **saver_props_dict)
         save(saver_props)
 
@@ -157,6 +159,7 @@ def main():
             action=action,
             skip_sudo=args.skip_sudo,
             password=args.password,
+            profile=args.profile,
         )
         dot_ctl_obj.run()
     elif args.action == "list":
