@@ -4,6 +4,13 @@ from dotctl.utils import log
 from dotctl.handlers.data_handler import copy
 from dotctl.paths import app_profile_directory, app_config_file
 from dotctl.handlers.config_handler import conf_reader
+from dotctl.handlers.git_handler import (
+    get_repo,
+    get_repo_branches,
+    git_fetch,
+    checkout_branch,
+    create_branch,
+)
 from dotctl.exception import exception_handler
 
 
@@ -17,7 +24,7 @@ class SaverProps:
 saver_default_props = SaverProps(
     skip_sudo=False,
     password=None,
-    profile=None,  # TODO: create a profile (new branch or existing branch) and switch to it before saving
+    profile=None,
 )
 
 
@@ -25,10 +32,20 @@ saver_default_props = SaverProps(
 def save(props: SaverProps) -> None:
     log("Saving profile...")
     profile_dir = Path(app_profile_directory)
-    if not profile_dir.exists():
-        raise RuntimeError(
-            "Profile directory does not exist, Please use `dotctl init` to create it first"
-        )
+    profile = props.profile
+    repo = get_repo(profile_dir)
+
+    _, _, active_profile, all_profiles = get_repo_branches(repo)
+    if profile is not None and active_profile != profile:
+        if profile not in all_profiles:
+            git_fetch(repo)
+        if profile in all_profiles:
+            checkout_branch(repo, profile)
+            log(f"Switched to profile: {profile}")
+        else:
+            create_branch(repo=repo, branch=profile)
+            log(f"Profile '{profile}' created and activated successfully.")
+
     config = conf_reader(config_file=Path(app_config_file))
 
     for name, section in config.save.items():

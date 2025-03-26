@@ -5,6 +5,13 @@ from git import Repo, GitCommandError, InvalidGitRepositoryError
 from dotctl.paths import app_profile_directory
 from dotctl.utils import log
 from dotctl.exception import exception_handler
+from dotctl.handlers.git_handler import (
+    get_repo,
+    get_repo_branches,
+    git_fetch,
+    delete_local_branch,
+    delete_remote_branch,
+)
 from dotctl import __APP_NAME__, __DEFAULT_PROFILE__
 
 
@@ -27,64 +34,44 @@ remover_default_props = RemoverProps(
 @exception_handler
 def remove(props: RemoverProps):
     log("Removing profile...")
-
-    if not props.profile_dir.exists():
-        log(f"Profile repo not yet initialized, run `{__APP_NAME__} init` first.")
-        sys.exit(1)
+    repo = get_repo(props.profile_dir)
 
     try:
-        repo = Repo(props.profile_dir)
+        if repo.bare:
+            print("The repository is bare. No profiles available.")
+            return
 
-        origin = None
-        if props.fetch and repo.remotes:
-            try:
-                origin = next(
-                    (remote for remote in repo.remotes if remote.name == "origin"), None
-                )
-                if origin:
-                    origin.fetch(prune=True)
-            except GitCommandError as e:
-                log(f"Failed to fetch remote: {e}")
+        if props.fetch:
+            git_fetch(repo)
 
-        branch_name = props.profile
+        local_profiles, remote_profiles, active_profile, all_profiles = (
+            get_repo_branches(repo)
+        )
+
+        profile = props.profile
 
         # Delete local branch if it exists
-        if branch_name in repo.branches:
-            repo.delete_head(branch_name, force=True)
-            log(f"Local profile '{branch_name}' removed successfully.")
+        if profile in local_profiles:
+            delete_local_branch(repo, profile)
+            log(f"Local profile '{profile}' removed successfully.")
         else:
-            log(f"Profile '{branch_name}' does not exist locally.")
+            log(f"Profile '{profile}' does not exist locally.")
 
         # Delete remote branch if it exists
-        if origin is None and repo.remotes:
-            origin = next(
-                (remote for remote in repo.remotes if remote.name == "origin"), None
-            )
-
-        if origin:
-            remote_branches = [ref.remote_head for ref in origin.refs]
-            if branch_name in remote_branches:
-                if props.no_confirm:
-                    origin.push(refspec=f":refs/heads/{branch_name}")
-                    log(f"Remote profile '{branch_name}' removed successfully.")
-                else:
-                    # Ask for confirmation
-                    confirm = input(
-                        f"Are you sure you want to delete remote profile '{branch_name}'? (y/N): "
-                    )
-                    if confirm.lower() == "y":
-                        origin.push(refspec=f":refs/heads/{branch_name}")
-                        log(f"Remote profile '{branch_name}' removed successfully.")
-                    else:
-                        log("Remote profile deletion aborted by user.")
+        if profile in remote_profiles:
+            if props.no_confirm:
+                delete_remote_branch(repo, profile)
             else:
-                log(f"Profile '{branch_name}' does not exist on cloud.")
+                # Ask for confirmation
+                confirm = input(
+                    f"Are you sure you want to delete remote profile '{profile}'? (y/N): "
+                )
+                if confirm.lower() == "y":
+                    delete_remote_branch(repo, profile)
+                else:
+                    log("Remote profile deletion aborted by user.")
         else:
-            log("No remote 'origin' found to delete the remote profile.")
+            log(f"Profile '{profile}' does not exist on cloud.")
 
-    except GitCommandError as e:
-        log(f"Git command error: {e}")
-    except InvalidGitRepositoryError:
-        log(f"Profile repo not yet initialized, run `{__APP_NAME__} init` first.")
     except Exception as e:
         raise Exception(f"Unexpected error: {e}")
