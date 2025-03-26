@@ -22,9 +22,22 @@ def is_git_repo(path: Path) -> bool:
 def get_repo(path: Path) -> Repo:
     if not is_git_repo(path):
         raise Exception(
-            f"Profile repo not yet initialized, run `{__APP_NAME__} init` first."
+            f"Profile not yet initialized, run `{__APP_NAME__} init` first."
         )
     return Repo(path)
+
+
+def git_fetch(repo: Repo) -> None:
+    try:
+        if repo.remotes:
+            origin = next(
+                (remote for remote in repo.remotes if remote.name == "origin"),
+                None,
+            )
+            if origin:
+                origin.fetch(prune=True)
+    except Exception as e:
+        log(f"Failed to fetch remote: {e}")
 
 
 def clone_repo(git_url: str, dest: Path) -> Repo | None:
@@ -34,8 +47,8 @@ def clone_repo(git_url: str, dest: Path) -> Repo | None:
     try:
         repo = Repo.clone_from(git_url, dest)
         return repo
-    except GitCommandError:
-        raise Exception(f"Failed to clone repo from {git_url} to {dest}.")
+    except Exception as e:
+        raise Exception(f"Failed to clone repo from {git_url} to {dest}. {e}")
 
 
 def create_local_repo(dest: Path) -> Repo | None:
@@ -49,18 +62,7 @@ def create_local_repo(dest: Path) -> Repo | None:
     return repo
 
 
-def checkout_branch(repo: Repo, branch: str) -> None:
-    try:
-        log(f"Checking out branch '{branch}'...")
-        repo.git.checkout(branch)
-    except GitCommandError:
-        log(f"Branch '{branch}' not found. Creating and switching to it...")
-        repo.git.checkout("-b", branch)
-    except Exception as e:
-        raise Exception(f"Unexpected error: {e}")
-
-
-def get_repo_branches(repo: Repo) -> dict[str, set[str]]:
+def get_repo_branches(repo: Repo):
     active_profile = repo.active_branch.name
     local_profiles = {profile.name for profile in repo.branches}
 
@@ -84,9 +86,18 @@ def get_repo_branches(repo: Repo) -> dict[str, set[str]]:
         remote_profiles = set()
 
     all_profiles = local_profiles | remote_profiles | {active_profile}
-    return {
-        "local": local_profiles,
-        "remote": remote_profiles,
-        "active": {active_profile},
-        "all": all_profiles,
-    }
+    return local_profiles, remote_profiles, active_profile, all_profiles
+
+
+def create_branch(repo: Repo, branch: str) -> None:
+    if repo.bare:
+        raise Exception("Error: The repository is bare. Cannot create a branch.")
+    has_commits = repo.head.is_valid() if repo.head else False
+    if not has_commits:
+        repo.index.commit("Initial commit for dotctl")
+    new_branch = repo.create_head(branch)
+    new_branch.checkout()
+
+
+def checkout_branch(repo: Repo, branch: str) -> None:
+    repo.git.checkout(branch)
