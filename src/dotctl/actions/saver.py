@@ -35,14 +35,16 @@ def save(props: SaverProps) -> None:
     profile = props.profile
     repo = get_repo(profile_dir)
 
-    _, _, _, all_profiles = get_repo_branches(repo)
-    if profile is not None:
+    _, _, active_profile, all_profiles = get_repo_branches(repo)
+    if profile is not None and active_profile != profile:
         if profile not in all_profiles:
             git_fetch(repo)
         if profile in all_profiles:
             checkout_branch(repo, profile)
+            log(f"Switched to profile: {profile}")
         else:
             create_branch(repo=repo, branch=profile)
+            log(f"Profile '{profile}' created and activated successfully.")
 
     config = conf_reader(config_file=Path(app_config_file))
 
