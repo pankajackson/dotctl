@@ -1,7 +1,16 @@
-from git import Repo, InvalidGitRepositoryError, GitCommandError
+from dataclasses import dataclass
 from pathlib import Path
+import getpass
+from git import Repo, InvalidGitRepositoryError, GitCommandError
 from dotctl import __APP_NAME__, __DEFAULT_PROFILE__
 from dotctl.utils import log
+
+
+@dataclass
+class RepoMetaData:
+    repo_name: str
+    owner: str
+    last_commit_author: str
 
 
 def is_git_repo(path: Path) -> bool:
@@ -101,3 +110,44 @@ def create_branch(repo: Repo, branch: str) -> None:
 
 def checkout_branch(repo: Repo, branch: str) -> None:
     repo.git.checkout(branch)
+
+
+def get_repo_meta(repo: Repo) -> RepoMetaData:
+
+    if repo.bare:
+        return RepoMetaData(
+            repo_name="bare_repo",
+            owner=getpass.getuser(),
+            last_commit_author="No commits",
+        )
+
+    remote_url = repo.remotes.origin.url if repo.remotes else "No remote"
+
+    try:
+        last_commit = repo.head.commit
+        last_commit_author = last_commit.author.name or "Unknown"
+    except ValueError:  # Handles empty repos (no commits yet)
+        last_commit_author = "No commits"
+
+    if remote_url != "No remote":
+        if remote_url.startswith("git@"):
+            repo_name = remote_url.split(":")[-1].replace(".git", "")
+            owner = remote_url.split(":")[-1].split("/")[0]
+        else:
+            repo_name = remote_url.split("/")[-1].replace(".git", "")
+            owner = remote_url.split("/")[-2]
+    else:
+        repo_name = (
+            Path(repo.working_tree_dir).name if repo.working_tree_dir else "unknown"
+        )
+        owner = (
+            last_commit_author
+            if last_commit_author != "No commits"
+            else getpass.getuser()
+        )
+
+    return RepoMetaData(
+        repo_name=repo_name,
+        owner=owner,
+        last_commit_author=last_commit_author,
+    )
