@@ -109,7 +109,17 @@ def create_branch(repo: Repo, branch: str) -> None:
 
 
 def checkout_branch(repo: Repo, branch: str) -> None:
-    repo.git.checkout(branch)
+    local_profiles, remote_profiles, active_profile, all_profiles = get_repo_branches(
+        repo
+    )
+    if branch not in all_profiles:
+        git_fetch(repo)
+    if branch in local_profiles:
+        repo.git.checkout(branch)
+    elif branch in remote_profiles:
+        repo.git.checkout("--track", f"origin/{branch}")
+    else:
+        raise Exception(f"Branch {branch} not found in local or remote profiles.")
 
 
 def delete_local_branch(repo: Repo, branch: str) -> None:
