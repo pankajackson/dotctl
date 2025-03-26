@@ -112,6 +112,31 @@ def checkout_branch(repo: Repo, branch: str) -> None:
     repo.git.checkout(branch)
 
 
+def delete_local_branch(repo: Repo, branch: str) -> None:
+
+    # If trying to delete the active branch, checkout to another first
+    if repo.active_branch.name == branch:
+        fallback_branch = next(
+            (b.name for b in repo.branches if b.name != branch), None
+        )
+        if fallback_branch:
+            repo.git.checkout(fallback_branch)
+        else:
+            raise Exception("No fallback branch available to checkout before deletion.")
+    repo.delete_head(branch, force=True)
+
+
+def delete_remote_branch(repo: Repo, branch: str) -> None:
+    try:
+        origin = repo.remotes.origin if "origin" in repo.remotes else None
+        if origin:
+            origin.push(refspec=f":refs/heads/{branch}")
+        else:
+            log("No remote 'origin' found to delete the remote profile.")
+    except GitCommandError as e:
+        log(f"Failed to delete remote branch '{branch}': {e}")
+
+
 def get_repo_meta(repo: Repo) -> RepoMetaData:
 
     if repo.bare:
