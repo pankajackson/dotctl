@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 import getpass
-from git import Repo, InvalidGitRepositoryError, GitCommandError
+from git import Repo, InvalidGitRepositoryError, GitCommandError, Remote
 from dotctl import __APP_NAME__, __DEFAULT_PROFILE__
 from dotctl.utils import log
 
@@ -36,15 +36,24 @@ def get_repo(path: Path) -> Repo:
     return Repo(path)
 
 
+def is_remote_repo(repo: Repo) -> tuple[bool, None] | tuple[bool, Remote]:
+    if not repo.remotes:
+        return False, None
+    origin = next((remote for remote in repo.remotes if remote.name == "origin"), None)
+    if origin:
+        try:
+            origin.fetch(prune=True)
+            return True, origin
+        except Exception as e:
+            print(f"Warning: Unable to fetch from remote '{origin.url}'. Error: {e}")
+    return False, None
+
+
 def git_fetch(repo: Repo) -> None:
     try:
-        if repo.remotes:
-            origin = next(
-                (remote for remote in repo.remotes if remote.name == "origin"),
-                None,
-            )
-            if origin:
-                origin.fetch(prune=True)
+        is_remote, origin = is_remote_repo(repo)
+        if is_remote and origin:
+            origin.fetch(prune=True)
     except Exception as e:
         log(f"Failed to fetch remote: {e}")
 
@@ -167,6 +176,44 @@ def commit_changes(repo: Repo, message: str) -> None:
         log("No changes to commit.")
         return
     repo.index.commit(message)
+
+
+def push_existing_branch(repo: Repo) -> None:
+    is_remote, origin = is_remote_repo(repo)
+    if is_remote and origin:
+        if repo.bare:
+            raise Exception("Error: The repository is bare. Cannot push changes.")
+
+        branch = repo.active_branch.name
+
+        try:
+            origin.push(branch)
+        except GitCommandError as e:
+            raise Exception(f"Error: Failed to push '{branch}'.\n{e}")
+    else:
+        log(
+            "Warning: Skipping push to remote repository!, The repository is not a remote repository."
+        )
+
+
+def push_new_branch(repo: Repo) -> None:
+    is_remote, origin = is_remote_repo(repo)
+    if is_remote and origin:
+        if repo.bare:
+            raise Exception("Error: The repository is bare. Cannot push new branch.")
+
+        branch = repo.active_branch.name
+
+        try:
+            origin.push(refspec=f"{branch}:{branch}", set_upstream=True)
+        except GitCommandError as e:
+            raise Exception(
+                f"Error: Failed to push new branch '{branch}' with --set-upstream.\n{e}"
+            )
+    else:
+        log(
+            "Warning: Skipping push to remote repository!, The repository is not a remote repository."
+        )
 
 
 def get_repo_meta(repo: Repo) -> RepoMetaData:

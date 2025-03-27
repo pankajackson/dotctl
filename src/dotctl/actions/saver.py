@@ -15,6 +15,9 @@ from dotctl.handlers.git_handler import (
     is_repo_changed,
     add_changes,
     commit_changes,
+    is_remote_repo,
+    push_existing_branch,
+    push_new_branch,
 )
 from dotctl.exception import exception_handler
 
@@ -40,7 +43,7 @@ def save(props: SaverProps) -> None:
     profile = props.profile
     repo = get_repo(profile_dir)
 
-    _, _, active_profile, all_profiles = get_repo_branches(repo)
+    _, remote_profiles, active_profile, all_profiles = get_repo_branches(repo)
     if profile is not None and active_profile != profile:
         if profile not in all_profiles:
             git_fetch(repo)
@@ -79,6 +82,15 @@ def save(props: SaverProps) -> None:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         full_message = f"{hostname} | {timestamp}"
         commit_changes(repo=repo, message=full_message)
+        is_remote, _ = is_remote_repo(repo=repo)
+        profile = active_profile if not profile else profile
+        if is_remote:
+            if profile not in remote_profiles:
+                git_fetch(repo=repo)
+            if not profile in remote_profiles:
+                push_new_branch(repo=repo)
+            else:
+                push_existing_branch(repo=repo)
         log("Profile saved successfully!")
     else:
         log("No changes detected!")
