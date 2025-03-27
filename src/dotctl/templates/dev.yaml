@@ -1,0 +1,22 @@
+export:
+  opt_folder:
+    entries:
+      - test-dots
+    location: /opt
+save:
+  configs:
+    entries:
+      - composectl.yaml
+    location: $CONFIG_DIR
+  root_folder:
+    entries:
+      - rootdir
+    location: /root
+  root_folder2:
+    entries:
+      - rootdir2
+    location: /root
+  root_folder3:
+    entries:
+      - rootdir3
+    location: /root
