@@ -1,7 +1,5 @@
-from dataclasses import dataclass
-import socket
-from datetime import datetime
 from pathlib import Path
+from dataclasses import dataclass
 from dotctl.utils import log
 from dotctl.handlers.data_handler import copy
 from dotctl.paths import app_profile_directory, app_config_file
@@ -11,22 +9,18 @@ from dotctl.handlers.git_handler import (
     get_repo_branches,
     git_fetch,
     checkout_branch,
-    create_branch,
-    is_repo_changed,
-    add_changes,
-    commit_changes,
 )
 from dotctl.exception import exception_handler
 
 
 @dataclass
-class SaverProps:
+class ActivatorProps:
     skip_sudo: bool
     password: str | None
     profile: str | None
 
 
-saver_default_props = SaverProps(
+activator_default_props = ActivatorProps(
     skip_sudo=False,
     password=None,
     profile=None,
@@ -34,8 +28,8 @@ saver_default_props = SaverProps(
 
 
 @exception_handler
-def save(props: SaverProps) -> None:
-    log("Saving profile...")
+def apply(props: ActivatorProps) -> None:
+    log("Activating profile...")
     profile_dir = Path(app_profile_directory)
     profile = props.profile
     repo = get_repo(profile_dir)
@@ -48,16 +42,16 @@ def save(props: SaverProps) -> None:
             checkout_branch(repo, profile)
             log(f"Switched to profile: {profile}")
         else:
-            create_branch(repo=repo, branch=profile)
-            log(f"Profile '{profile}' created and activated successfully.")
+            log(f"Profile {profile} is not available.")
+            return
 
     config = conf_reader(config_file=Path(app_config_file))
 
     for name, section in config.save.items():
-        source_base_dir = Path(section.location)
-        dest_base_dir = profile_dir / name
+        source_base_dir = profile_dir / name
+        dest_base_dir = Path(section.location)
         dest_base_dir.mkdir(exist_ok=True)
-        log(f'Saving "{name}"...')
+        log(f'Applying "{name}"...')
         for entry in section.entries:
             source = source_base_dir / entry
             dest = dest_base_dir / entry
@@ -73,12 +67,4 @@ def save(props: SaverProps) -> None:
                 if sudo_pass is not None:
                     props.password = sudo_pass
 
-    add_changes(repo=repo)
-    if is_repo_changed(repo=repo):
-        hostname = socket.gethostname()
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        full_message = f"{hostname} | {timestamp}"
-        commit_changes(repo=repo, message=full_message)
-        log("Profile saved successfully!")
-    else:
-        log("No changes detected!")
+    log("Profile saved successfully!")

@@ -5,6 +5,7 @@ from .arg_manager import get_parser
 from .exception import exception_handler
 from .actions.initializer import initialise, initializer_default_props
 from .actions.saver import save, saver_default_props
+from .actions.activator import apply, activator_default_props
 from .actions.lister import get_profile_list, lister_default_props
 from .actions.switcher import switch, switcher_default_props
 from .actions.creator import create, creator_default_props
@@ -16,6 +17,7 @@ class Action(Enum):
     list = "list"
     switch = "switch"
     save = "save"
+    apply = "apply"
     create = "create"
     remove = "remove"
     imp = "import"
@@ -56,6 +58,8 @@ class DotCtl:
             self.init_profile()
         elif self.action == Action.save:
             self.save_dots()
+        elif self.action == Action.apply:
+            self.apply_dots()
         elif self.action == Action.list:
             self.list_profiles()
         elif self.action == Action.switch:
@@ -91,6 +95,17 @@ class DotCtl:
             saver_props_dict["profile"] = self.profile
         saver_props = replace(saver_default_props, **saver_props_dict)
         save(saver_props)
+
+    def apply_dots(self):
+        apply_props_dict = {}
+        if self.skip_sudo:
+            apply_props_dict["skip_sudo"] = self.skip_sudo
+        if self.password:
+            apply_props_dict["password"] = self.password
+        if self.profile:
+            apply_props_dict["profile"] = self.profile
+        apply_props = replace(activator_default_props, **apply_props_dict)
+        apply(apply_props)
 
     def list_profiles(self):
         lister_props_dict = {}
@@ -155,6 +170,14 @@ def main():
         )
         dot_ctl_obj.run()
     elif args.action == "save":
+        dot_ctl_obj = DotCtl(
+            action=action,
+            skip_sudo=args.skip_sudo,
+            password=args.password,
+            profile=args.profile,
+        )
+        dot_ctl_obj.run()
+    elif args.action == "apply":
         dot_ctl_obj = DotCtl(
             action=action,
             skip_sudo=args.skip_sudo,

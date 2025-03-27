@@ -8,38 +8,25 @@ from dotctl.utils import log
 def rsync(
     source: Path, destination: Path, sudo_pass: str | None = None, is_dir: bool = False
 ):
-    """Synchronizes source to destination using rsync with sudo support."""
+    """Synchronizes source to destination using rsync with optional sudo support."""
     rsync_command = "rsync"
     exclude_patterns = ["*.pyc", "*.pyo"]
     exclude_options = [f"--exclude={pattern}" for pattern in exclude_patterns]
-    rsync_options = ["-az", "--delete"]  # Remove redundant comma
+    rsync_options = ["-az", "--delete"]
 
-    if is_dir:
-        source_str = str(source) + "/"
-        destination_str = str(destination) + "/"
-    else:
-        source_str = str(source)
-        destination_str = str(destination)
+    source_str = str(source) + "/" if is_dir else str(source)
+    destination_str = str(destination) + "/" if is_dir else str(destination)
+
+    command = [
+        rsync_command,
+        *rsync_options,
+        *exclude_options,
+        source_str,
+        destination_str,
+    ]
+
     if sudo_pass:
-        command = [
-            "sshpass",
-            "-p",
-            sudo_pass,
-            "sudo",
-            rsync_command,
-            *rsync_options,
-            *exclude_options,
-            source_str,
-            destination_str,  # Ensure paths are strings
-        ]
-    else:
-        command = [
-            rsync_command,
-            *rsync_options,
-            *exclude_options,
-            source_str,
-            destination_str,
-        ]
+        command = ["sshpass", "-p", sudo_pass, "sudo"] + command
 
     process = subprocess.Popen(
         command,
@@ -53,9 +40,13 @@ def rsync(
 
     if process.returncode != 0:
         log(f"rsync failed: {stderr.strip()}")
+
+        if "Permission denied" in stderr or process.returncode == 13:
+            raise PermissionError(stderr.strip())
+
         raise subprocess.CalledProcessError(process.returncode, command, stderr)
 
-    return stdout.strip()  # Return output for debugging
+    return stdout.strip()
 
 
 def get_sudo_pass(path: Path, sudo_max_attempts: int = 3):
@@ -77,15 +68,18 @@ def get_sudo_pass(path: Path, sudo_max_attempts: int = 3):
             else (None, None, False)
         )
 
-    if sudo_behaviour_status == 1:
+    if sudo_behaviour_status in (1, 2):
         s_pass = getpass.getpass("Please provide password: ")
-        return None, s_pass, False  # Apply password globally (recurrence)
-    elif sudo_behaviour_status == 2:
-        s_pass = getpass.getpass("Please provide password: ")
-        return s_pass, None, False  # Apply password only for current file
-    elif sudo_behaviour_status == 3:
+        return (
+            (None, s_pass, False)
+            if sudo_behaviour_status == 1
+            else (s_pass, None, False)
+        )
+
+    if sudo_behaviour_status == 3:
         return None, None, True  # Skip all
-    elif sudo_behaviour_status == 4:
+
+    if sudo_behaviour_status == 4:
         return None, None, False  # Skip only current file
 
     log("Error: Invalid input, please enter a number between 1 and 4.")
@@ -115,24 +109,34 @@ def copy(source: Path, dest: Path, skip_sudo=False, sudo_pass=None):
     """Copies files/directories using rsync and handles sudo permission issues."""
     temp_pass = None
     source_exists = False
+    is_dir = False  # Default to file
 
     try:
-        source_exists = source.exists()
-        is_dir = source.is_dir()
+        try:
+            source_exists = source.exists()
+            is_dir = source.is_dir()
+        except PermissionError:
+            if skip_sudo:
+                log(f"PermissionError: skipping {source}")
+                return skip_sudo, sudo_pass
+            else:
+                if not temp_pass and not sudo_pass:
+                    temp_pass, sudo_pass, skip_sudo = get_sudo_pass(source)
+                success, _, _ = run_command(f"ls {source}", temp_pass or sudo_pass)
+                source_exists = success
+                _, _, exit_code = run_command(
+                    f"test -d {source}", temp_pass or sudo_pass
+                )
+                is_dir = exit_code == 0
+
         if source_exists:
             assert source != dest, "Source and destination can't be the same"
-            rsync(source, dest, sudo_pass or temp_pass, is_dir=is_dir)
+            rsync(source, dest, temp_pass or sudo_pass, is_dir=is_dir)
     except PermissionError:
-        if skip_sudo:
-            log(f"PermissionError: skipping {source}")
-        else:
-            if not temp_pass and not sudo_pass:
-                temp_pass, sudo_pass, skip_sudo = get_sudo_pass(source)
-            success, _, _ = run_command(f"ls {source}", temp_pass or sudo_pass)
-            source_exists = success
-            _, _, exit_code = run_command(f"test -d {source}", temp_pass or sudo_pass)
-            is_dir = exit_code == 0
-
-            if source_exists:
+        log(f"PermissionError: {source} requires sudo access.")
+        if not skip_sudo:
+            temp_pass, sudo_pass, skip_sudo = get_sudo_pass(source)
+            if temp_pass or sudo_pass:
                 rsync(source, dest, temp_pass or sudo_pass, is_dir=is_dir)
+
     return skip_sudo, sudo_pass
