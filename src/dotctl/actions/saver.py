@@ -1,5 +1,7 @@
-from pathlib import Path
 from dataclasses import dataclass
+import socket
+from datetime import datetime
+from pathlib import Path
 from dotctl.utils import log
 from dotctl.handlers.data_handler import copy
 from dotctl.paths import app_profile_directory, app_config_file
@@ -10,6 +12,9 @@ from dotctl.handlers.git_handler import (
     git_fetch,
     checkout_branch,
     create_branch,
+    is_repo_changed,
+    add_changes,
+    commit_changes,
 )
 from dotctl.exception import exception_handler
 
@@ -68,4 +73,12 @@ def save(props: SaverProps) -> None:
                 if sudo_pass is not None:
                     props.password = sudo_pass
 
-    log("Profile saved successfully!")
+    add_changes(repo=repo)
+    if is_repo_changed(repo=repo):
+        hostname = socket.gethostname()
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        full_message = f"{hostname} | {timestamp}"
+        commit_changes(repo=repo, message=full_message)
+        log("Profile saved successfully!")
+    else:
+        log("No changes detected!")

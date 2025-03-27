@@ -147,6 +147,28 @@ def delete_remote_branch(repo: Repo, branch: str) -> None:
         log(f"Failed to delete remote branch '{branch}': {e}")
 
 
+def add_changes(repo: Repo) -> None:
+    if repo.bare:
+        raise Exception("Error: The repository is bare. Cannot add files.")
+    repo.git.add("--all")
+
+
+def is_repo_changed(repo: Repo) -> bool:
+    if not repo.index.diff("HEAD") and not repo.untracked_files:
+        return False
+    return True
+
+
+def commit_changes(repo: Repo, message: str) -> None:
+    if repo.bare:
+        raise Exception("Error: The repository is bare. Cannot commit.")
+
+    if not is_repo_changed(repo):
+        log("No changes to commit.")
+        return
+    repo.index.commit(message)
+
+
 def get_repo_meta(repo: Repo) -> RepoMetaData:
 
     if repo.bare:
