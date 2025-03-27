@@ -154,4 +154,29 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Fetch and Sync profile information from Cloud before removing it",
     )
+
+    # Apply Parser
+    apply_parser = subparsers.add_parser("apply", help="Apply profile")
+
+    apply_parser.add_argument(
+        "-p",
+        "--password",
+        type=str,
+        help="Sudo Password to authorize restricted data (e.g. /usr/share)",
+        metavar="<password>",
+        default=None,
+    )
+    apply_parser.add_argument(
+        "--skip-sudo",
+        required=False,
+        action="store_true",
+        help="Skip all sudo operations",
+    )
+    apply_parser.add_argument(
+        "profile",
+        nargs="?",  # Makes positional argument optional
+        type=str,
+        help="Profile to apply to",
+        default=None,
+    )
     return parser
