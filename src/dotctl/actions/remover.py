@@ -11,6 +11,7 @@ from dotctl.handlers.git_handler import (
     git_fetch,
     delete_local_branch,
     delete_remote_branch,
+    is_remote_repo,
 )
 from dotctl import __APP_NAME__, __DEFAULT_PROFILE__
 
@@ -58,20 +59,26 @@ def remove(props: RemoverProps):
             log(f"Profile '{profile}' does not exist locally.")
 
         # Delete remote branch if it exists
-        if profile in remote_profiles:
-            if props.no_confirm:
-                delete_remote_branch(repo, profile)
-            else:
-                # Ask for confirmation
-                confirm = input(
-                    f"Are you sure you want to delete remote profile '{profile}'? (y/N): "
-                )
-                if confirm.lower() == "y":
+        if is_remote_repo(repo=repo):
+            if profile in remote_profiles:
+                if props.no_confirm:
                     delete_remote_branch(repo, profile)
+                    log(f"Remote profile '{profile}' removed successfully.")
+                    return
                 else:
-                    log("Remote profile deletion aborted by user.")
-        else:
-            log(f"Profile '{profile}' does not exist on cloud.")
+                    # Ask for confirmation
+                    confirm = input(
+                        f"Are you sure you want to delete remote profile '{profile}'? (y/N): "
+                    )
+                    if confirm.lower() == "y":
+                        delete_remote_branch(repo, profile)
+                        log(f"Remote profile '{profile}' removed successfully.")
+                        return
+                    else:
+                        log("Remote profile deletion aborted by user.")
+                        return
+
+        log(f"Profile '{profile}' does not exist on cloud.")
 
     except Exception as e:
         raise Exception(f"Unexpected error: {e}")
