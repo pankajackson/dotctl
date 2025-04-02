@@ -1,49 +1,56 @@
 from dataclasses import dataclass
-import socket
-from datetime import datetime
+import shutil
+from random import shuffle
 from pathlib import Path
 from dotctl.utils import log
 from dotctl.handlers.data_handler import copy
-from dotctl.paths import app_profile_directory, app_config_file
+from dotctl.paths import app_profile_directory, app_config_file, home_path
 from dotctl.handlers.config_handler import conf_reader
 from dotctl.handlers.git_handler import (
     get_repo,
     get_repo_branches,
     git_fetch,
     checkout_branch,
-    create_branch,
-    is_repo_changed,
-    add_changes,
-    commit_changes,
-    is_remote_repo,
-    push_existing_branch,
-    push_new_branch,
 )
 from dotctl.exception import exception_handler
+from dotctl import __EXPORT_EXTENSION__, __EXPORT_DATA_DIR__
 
 
 @dataclass
-class SaverProps:
+class ExporterProps:
+    profile: str | None
     skip_sudo: bool
     password: str | None
-    profile: str | None
 
 
-saver_default_props = SaverProps(
+exporter_default_props = ExporterProps(
+    profile=None,
     skip_sudo=False,
     password=None,
-    profile=None,
 )
 
 
 @exception_handler
-def save(props: SaverProps) -> None:
-    log("Saving profile...")
+def exporter(props: ExporterProps) -> None:
+    log("Exporting profile...")
     profile_dir = Path(app_profile_directory)
+    export_base_path = Path(home_path)
     profile = props.profile
     repo = get_repo(profile_dir)
 
     _, remote_profiles, active_profile, all_profiles = get_repo_branches(repo)
+    if not profile:
+        profile = active_profile
+
+    # Setup/Create export_path directory
+    export_profile_path = export_base_path / profile
+    if export_profile_path.exists():
+        rand_str = list("abcdefg12345")
+        shuffle(rand_str)
+        export_profile_path = export_base_path / (profile + "".join(rand_str))
+    export_profile_path.mkdir(parents=True, exist_ok=True)
+
+    # Make sure the profile is active
     if profile is not None and active_profile != profile:
         if profile not in all_profiles:
             git_fetch(repo)
@@ -52,15 +59,26 @@ def save(props: SaverProps) -> None:
             checkout_branch(repo, profile)
             log(f"Switched to profile: {profile}")
         else:
-            create_branch(repo=repo, branch=profile)
-            log(f"Profile '{profile}' created and activated successfully.")
+            log(f"Profile '{profile}' is not found.")
+            return
 
+    # Copy the profile
+    copy(
+        profile_dir,
+        export_profile_path,
+        skip_sudo=props.skip_sudo,
+        sudo_pass=props.password,
+    )
+
+    # Read the config file
     config = conf_reader(config_file=Path(app_config_file))
 
-    for name, section in config.save.items():
+    export_data_path = export_profile_path / __EXPORT_DATA_DIR__
+
+    for name, section in config.export.items():
         source_base_dir = Path(section.location)
-        dest_base_dir = profile_dir / name
-        dest_base_dir.mkdir(exist_ok=True)
+        dest_base_dir = export_data_path / name
+        dest_base_dir.mkdir(parents=True, exist_ok=True)
         log(f'Saving "{name}"...')
         for entry in section.entries:
             source = source_base_dir / entry
@@ -77,21 +95,14 @@ def save(props: SaverProps) -> None:
                 if sudo_pass is not None:
                     props.password = sudo_pass
 
-    add_changes(repo=repo)
-    if is_repo_changed(repo=repo):
-        hostname = socket.gethostname()
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        full_message = f"{hostname} | {timestamp}"
-        commit_changes(repo=repo, message=full_message)
-        is_remote, _ = is_remote_repo(repo=repo)
-        profile = active_profile if not profile else profile
-        if is_remote:
-            if profile not in remote_profiles:
-                git_fetch(repo=repo)
-            if not profile in remote_profiles:
-                push_new_branch(repo=repo)
-            else:
-                push_existing_branch(repo=repo)
-        log("Profile saved successfully!")
-    else:
-        log("No changes detected!")
+    log("Creating archive")
+    archive_file = shutil.make_archive(
+        str(export_profile_path), "zip", root_dir=export_profile_path
+    )
+
+    shutil.rmtree(export_profile_path)
+    shutil.move(archive_file, export_profile_path.with_suffix(__EXPORT_EXTENSION__))
+
+    log(
+        f"Successfully exported to {export_profile_path.with_suffix(__EXPORT_EXTENSION__)}"
+    )

@@ -18,8 +18,6 @@ from dotctl.paths import (
 )
 from dotctl.utils import log
 
-EXPORT_EXTENSION = ".dtsv"
-
 
 @dataclass
 class EntryConfig:
