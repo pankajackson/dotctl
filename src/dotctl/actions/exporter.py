@@ -79,7 +79,7 @@ def exporter(props: ExporterProps) -> None:
         source_base_dir = Path(section.location)
         dest_base_dir = export_data_path / name
         dest_base_dir.mkdir(parents=True, exist_ok=True)
-        log(f'Saving "{name}"...')
+        log(f'Exporting "{name}"...')
         for entry in section.entries:
             source = source_base_dir / entry
             dest = dest_base_dir / entry
@@ -94,6 +94,9 @@ def exporter(props: ExporterProps) -> None:
                     props.skip_sudo = skip_sudo
                 if sudo_pass is not None:
                     props.password = sudo_pass
+    if profile is not None and active_profile != profile:
+        checkout_branch(repo, active_profile)
+        log(f"Switched back to profile: {active_profile}")
 
     log("Creating archive")
     archive_file = shutil.make_archive(
