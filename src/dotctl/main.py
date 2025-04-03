@@ -16,17 +16,17 @@ from .actions.importer import importer, importer_default_props
 
 
 class Action(Enum):
-    init = "init"
-    list = "list"
-    switch = "switch"
-    save = "save"
-    apply = "apply"
-    create = "create"
-    remove = "remove"
-    imp = "import"
-    exp = "export"
-    help = "help"
-    version = "version"
+    INIT = "init"
+    LIST = "list"
+    SWITCH = "switch"
+    SAVE = "save"
+    APPLY = "apply"
+    CREATE = "create"
+    REMOVE = "remove"
+    IMPORT = "import"
+    EXPORT = "export"
+    HELP = "help"
+    VERSION = "version"
 
 
 class DotCtl:
@@ -57,24 +57,19 @@ class DotCtl:
         self.no_confirm = no_confirm
 
     def run(self):
-        if self.action == Action.init:
-            self.init_profile()
-        elif self.action == Action.save:
-            self.save_dots()
-        elif self.action == Action.apply:
-            self.apply_dots()
-        elif self.action == Action.list:
-            self.list_profiles()
-        elif self.action == Action.switch:
-            self.switch_profile()
-        elif self.action == Action.create:
-            self.create_profile()
-        elif self.action == Action.remove:
-            self.remove_profile()
-        elif self.action == Action.exp:
-            self.export_profile()
-        elif self.action == Action.imp:
-            self.import_profile()
+        """Run the appropriate action based on the provided command."""
+        action_methods = {
+            Action.INIT: self.init_profile,
+            Action.SAVE: self.save_dots,
+            Action.APPLY: self.apply_dots,
+            Action.LIST: self.list_profiles,
+            Action.SWITCH: self.switch_profile,
+            Action.CREATE: self.create_profile,
+            Action.REMOVE: self.remove_profile,
+            Action.EXPORT: self.export_profile,
+            Action.IMPORT: self.import_profile,
+        }
+        action_methods.get(self.action, lambda: None)()
 
     def init_profile(self):
         initializer_props_dict = {}
@@ -191,80 +186,26 @@ def main():
     check_req_commands()
 
     try:
-        action = Action(args.action)
+        action = Action(args.action.lower())
     except ValueError:
-        parser.error(f"Invalid action: {args.action}")
+        parser.error(f"Invalid action: {args.action}. Use '--help' for usage.")
 
-    if args.action == "init":
-        dot_ctl_obj = DotCtl(
-            action=action,
-            git_url=args.url,
-            profile=args.profile,
-            config=args.config,
-            env=args.env,
-        )
-        dot_ctl_obj.run()
-    elif args.action == "save":
-        dot_ctl_obj = DotCtl(
-            action=action,
-            skip_sudo=args.skip_sudo,
-            password=args.password,
-            profile=args.profile,
-        )
-        dot_ctl_obj.run()
-    elif args.action == "apply":
-        dot_ctl_obj = DotCtl(
-            action=action,
-            skip_sudo=args.skip_sudo,
-            password=args.password,
-            profile=args.profile,
-        )
-        dot_ctl_obj.run()
-    elif args.action == "list":
-        dot_ctl_obj = DotCtl(
-            action=action,
-            details=args.details,
-            fetch=args.fetch,
-        )
-        dot_ctl_obj.run()
-    elif args.action == "switch":
-        dot_ctl_obj = DotCtl(
-            action=action,
-            profile=args.profile,
-            fetch=args.fetch,
-        )
-        dot_ctl_obj.run()
-    elif args.action == "create":
-        dot_ctl_obj = DotCtl(
-            action=action,
-            profile=args.profile,
-            fetch=args.fetch,
-        )
-        dot_ctl_obj.run()
-    elif args.action == "remove":
-        dot_ctl_obj = DotCtl(
-            action=action,
-            profile=args.profile,
-            fetch=args.fetch,
-            no_confirm=args.no_confirm,
-        )
-        dot_ctl_obj.run()
-    elif args.action == "export":
-        dot_ctl_obj = DotCtl(
-            action=action,
-            skip_sudo=args.skip_sudo,
-            password=args.password,
-            profile=args.profile,
-        )
-        dot_ctl_obj.run()
-    elif args.action == "import":
-        dot_ctl_obj = DotCtl(
-            action=action,
-            skip_sudo=args.skip_sudo,
-            password=args.password,
-            profile=args.profile,
-        )
-        dot_ctl_obj.run()
+    # Convert arguments to dictionary dynamically
+    common_args = {
+        "action": action,
+        "git_url": getattr(args, "url", None),
+        "profile": getattr(args, "profile", None),
+        "config": getattr(args, "config", None),
+        "env": getattr(args, "env", None),
+        "skip_sudo": getattr(args, "skip_sudo", False),
+        "password": getattr(args, "password", None),
+        "details": getattr(args, "details", False),
+        "fetch": getattr(args, "fetch", False),
+        "no_confirm": getattr(args, "no_confirm", False),
+    }
+
+    dot_ctl_obj = DotCtl(**common_args)
+    dot_ctl_obj.run()
 
 
 if __name__ == "__main__":
