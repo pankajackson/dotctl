@@ -9,4 +9,4 @@ except PackageNotFoundError:
 __BASE_DIR__ = os.path.dirname(os.path.abspath(__file__))
 __DEFAULT_PROFILE__ = "default"
 __EXPORT_EXTENSION__ = ".dtsv"
-__EXPORT_DATA_DIR__ = ".export"
+__EXPORT_DATA_DIR__ = "._export_"
