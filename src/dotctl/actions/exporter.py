@@ -93,8 +93,12 @@ def exporter(props: ExporterProps) -> None:
             )
 
             # Update props based on the result
-            if result:
-                props.skip_sudo, props.password = result
+            if result is not None:
+                skip_sudo, sudo_pass = result
+                if skip_sudo is not None:
+                    props.skip_sudo = skip_sudo
+                if sudo_pass is not None:
+                    props.password = sudo_pass
 
     # Switch back to the original profile if changed
     if profile != active_profile:
