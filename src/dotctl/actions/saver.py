@@ -47,6 +47,7 @@ def save(props: SaverProps) -> None:
     if profile is not None and active_profile != profile:
         if profile not in all_profiles:
             git_fetch(repo)
+            _, remote_profiles, active_profile, all_profiles = get_repo_branches(repo)
         if profile in all_profiles:
             checkout_branch(repo, profile)
             log(f"Switched to profile: {profile}")

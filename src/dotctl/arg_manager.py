@@ -179,4 +179,51 @@ def get_parser() -> argparse.ArgumentParser:
         help="Profile to apply to",
         default=None,
     )
+
+    # Export Parser
+    export_parser = subparsers.add_parser("export", help="Export profile")
+
+    export_parser.add_argument(
+        "profile",
+        nargs="?",  # Makes positional argument optional
+        type=str,
+        help="Profile to export to",
+        default=None,
+    )
+    export_parser.add_argument(
+        "-p",
+        "--password",
+        type=str,
+        help="Sudo Password to authorize restricted data (e.g. /usr/share)",
+        metavar="<password>",
+        default=None,
+    )
+    export_parser.add_argument(
+        "--skip-sudo",
+        required=False,
+        action="store_true",
+        help="Skip all sudo operations",
+    )
+    # Import Parser
+    import_parser = subparsers.add_parser("import", help="Import profile")
+
+    import_parser.add_argument(
+        "profile",
+        type=str,
+        help="Path of dtsv dot profile file to import",
+    )
+    import_parser.add_argument(
+        "-p",
+        "--password",
+        type=str,
+        help="Sudo Password to authorize restricted data (e.g. /usr/share)",
+        metavar="<password>",
+        default=None,
+    )
+    import_parser.add_argument(
+        "--skip-sudo",
+        required=False,
+        action="store_true",
+        help="Skip all sudo operations",
+    )
     return parser
