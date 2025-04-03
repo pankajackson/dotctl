@@ -11,6 +11,7 @@ from .actions.switcher import switch, switcher_default_props
 from .actions.creator import create, creator_default_props
 from .actions.remover import remove, remover_default_props
 from .actions.exporter import exporter, exporter_default_props
+from .actions.importer import importer, importer_default_props
 
 
 class Action(Enum):
@@ -71,6 +72,8 @@ class DotCtl:
             self.remove_profile()
         elif self.action == Action.exp:
             self.export_profile()
+        elif self.action == Action.imp:
+            self.import_profile()
 
     def init_profile(self):
         initializer_props_dict = {}
@@ -159,6 +162,17 @@ class DotCtl:
         exporter_props = replace(exporter_default_props, **exporter_props_dict)
         exporter(exporter_props)
 
+    def import_profile(self):
+        importer_props_dict = {}
+        if self.skip_sudo:
+            importer_props_dict["skip_sudo"] = self.skip_sudo
+        if self.password:
+            importer_props_dict["password"] = self.password
+        if self.profile:
+            importer_props_dict["profile"] = Path(self.profile)
+        importer_props = replace(importer_default_props, **importer_props_dict)
+        importer(importer_props)
+
 
 @exception_handler
 def main():
@@ -229,6 +243,14 @@ def main():
         )
         dot_ctl_obj.run()
     elif args.action == "export":
+        dot_ctl_obj = DotCtl(
+            action=action,
+            skip_sudo=args.skip_sudo,
+            password=args.password,
+            profile=args.profile,
+        )
+        dot_ctl_obj.run()
+    elif args.action == "import":
         dot_ctl_obj = DotCtl(
             action=action,
             skip_sudo=args.skip_sudo,
