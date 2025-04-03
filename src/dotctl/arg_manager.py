@@ -204,4 +204,26 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip all sudo operations",
     )
+    # Import Parser
+    import_parser = subparsers.add_parser("import", help="Import profile")
+
+    import_parser.add_argument(
+        "profile",
+        type=str,
+        help="Path of dtsv dot profile file to import",
+    )
+    import_parser.add_argument(
+        "-p",
+        "--password",
+        type=str,
+        help="Sudo Password to authorize restricted data (e.g. /usr/share)",
+        metavar="<password>",
+        default=None,
+    )
+    import_parser.add_argument(
+        "--skip-sudo",
+        required=False,
+        action="store_true",
+        help="Skip all sudo operations",
+    )
     return parser
