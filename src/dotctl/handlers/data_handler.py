@@ -10,7 +10,7 @@ def rsync(
 ):
     """Synchronizes source to destination using rsync with optional sudo support."""
     rsync_command = "rsync"
-    exclude_patterns = ["*.pyc", "*.pyo"]
+    exclude_patterns = ["*.pyc", "*.pyo", ".git"]
     exclude_options = [f"--exclude={pattern}" for pattern in exclude_patterns]
     rsync_options = ["-az", "--delete"]
 

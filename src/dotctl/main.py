@@ -10,6 +10,7 @@ from .actions.lister import get_profile_list, lister_default_props
 from .actions.switcher import switch, switcher_default_props
 from .actions.creator import create, creator_default_props
 from .actions.remover import remove, remover_default_props
+from .actions.exporter import exporter, exporter_default_props
 
 
 class Action(Enum):
@@ -68,6 +69,8 @@ class DotCtl:
             self.create_profile()
         elif self.action == Action.remove:
             self.remove_profile()
+        elif self.action == Action.exp:
+            self.export_profile()
 
     def init_profile(self):
         initializer_props_dict = {}
@@ -145,6 +148,17 @@ class DotCtl:
         remove_props = replace(remover_default_props, **remover_props_dict)
         remove(remove_props)
 
+    def export_profile(self):
+        exporter_props_dict = {}
+        if self.skip_sudo:
+            exporter_props_dict["skip_sudo"] = self.skip_sudo
+        if self.password:
+            exporter_props_dict["password"] = self.password
+        if self.profile:
+            exporter_props_dict["profile"] = self.profile
+        exporter_props = replace(exporter_default_props, **exporter_props_dict)
+        exporter(exporter_props)
+
 
 @exception_handler
 def main():
@@ -212,6 +226,14 @@ def main():
             profile=args.profile,
             fetch=args.fetch,
             no_confirm=args.no_confirm,
+        )
+        dot_ctl_obj.run()
+    elif args.action == "export":
+        dot_ctl_obj = DotCtl(
+            action=action,
+            skip_sudo=args.skip_sudo,
+            password=args.password,
+            profile=args.profile,
         )
         dot_ctl_obj.run()
 
