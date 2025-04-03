@@ -1,9 +1,10 @@
 import os
 import traceback
+import shutil
 from pathlib import Path
 from datetime import datetime
 from dotctl.paths import app_home_directory
-from dotctl import __APP_NAME__
+from dotctl import __APP_NAME__, __COMMANDS_REQ_
 from .utils import log
 
 
@@ -30,3 +31,12 @@ def exception_handler(func):
             return function
 
     return inner_func
+
+
+def check_req_commands(cmd_list: list[str] = __COMMANDS_REQ_):
+    required_cmd_list = []
+    for cmd in cmd_list:
+        if not shutil.which(cmd):
+            required_cmd_list.append(cmd)
+    if required_cmd_list:
+        raise Exception(f"Required commands not found: {required_cmd_list}")
