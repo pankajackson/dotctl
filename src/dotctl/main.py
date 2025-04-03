@@ -1,8 +1,9 @@
 from enum import Enum
 from pathlib import Path
 from dataclasses import replace
+from dotctl import __APP_NAME__, __APP_VERSION__
 from .arg_manager import get_parser
-from .exception import exception_handler
+from .exception import exception_handler, check_req_commands
 from .actions.initializer import initialise, initializer_default_props
 from .actions.saver import save, saver_default_props
 from .actions.activator import apply, activator_default_props
@@ -179,9 +180,15 @@ def main():
     parser = get_parser()
     args = parser.parse_args()
 
+    if args.version:
+        print(f"{__APP_NAME__}: {__APP_VERSION__}")
+        return
+
     if not args.action:
         parser.print_help()
         return
+
+    check_req_commands()
 
     try:
         action = Action(args.action)
