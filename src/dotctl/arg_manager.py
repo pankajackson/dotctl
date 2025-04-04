@@ -226,4 +226,15 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip all sudo operations",
     )
+    # Wipe Parser
+    wipe_parser = subparsers.add_parser("wipe", help="Wipe Profiles")
+
+    wipe_parser.add_argument(
+        "-y",
+        "--no-confirm",
+        required=False,
+        action="store_true",
+        help="Wipe Profiles without confirmation",
+        default=False,
+    )
     return parser
