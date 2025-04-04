@@ -197,6 +197,12 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip post hooks",
     )
+    apply_parser.add_argument(
+        "--ignore-hook-errors",
+        required=False,
+        action="store_true",
+        help="Ignore hooks errors",
+    )
 
     # Export Parser
     export_parser = subparsers.add_parser("export", help="Export profile")

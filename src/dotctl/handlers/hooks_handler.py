@@ -19,6 +19,7 @@ def run_shell_script(
     on_output=None,
     input_lines=None,
     timeout: int = 30,
+    ignore_errors: bool = False,
 ):
     """
     Runs a shell script with real-time output and optional stdin input.
@@ -28,12 +29,13 @@ def run_shell_script(
     :param on_output: Optional function to process each line of output
     :param input_lines: Optional list of lines to send to stdin
     :param timeout: Optional timeout in seconds
+    :param ignore_errors: If True, script failures (non-zero exit code) are ignored
     :return: Exit code of the process
     """
     if args is None:
         args = []
 
-    cmd = ["bash", script_path] + args
+    cmd = ["bash", str(script_path)] + args
 
     process = subprocess.Popen(
         cmd,
@@ -64,10 +66,26 @@ def run_shell_script(
         process.wait(timeout=timeout)
     except subprocess.TimeoutExpired:
         process.kill()
-        print("❌ Script timed out and was terminated.")
+        msg = f"❌ Script '{script_path}' timed out and was terminated."
+        if not ignore_errors:
+            raise RuntimeError(msg)
+        if on_output:
+            on_output(msg)
+        else:
+            print(msg)
         return -1
 
     output_thread.join()
+
+    if process.returncode != 0:
+        msg = f"❌ Script '{script_path}' exited with code {process.returncode}"
+        if not ignore_errors:
+            raise RuntimeError(msg)
+        if on_output:
+            on_output(msg)
+        else:
+            print(msg)
+
     return process.returncode
 
 
@@ -75,13 +93,18 @@ def run_hooks(
     app_hooks_dir_path: Path = Path(app_hooks_directory),
     pre_apply_hooks: bool = False,
     post_apply_hooks: bool = False,
+    ignore_errors: bool = False,
 ):
-
     if pre_apply_hooks:
-        log(f"Applying pre-apply hooks...")
+        log("Applying pre-apply hooks...")
         script_file = app_hooks_dir_path / "pre_apply.sh"
-        run_shell_script(script_file, timeout=60, on_output=log)
+        run_shell_script(
+            script_file, timeout=60, on_output=log, ignore_errors=ignore_errors
+        )
+
     if post_apply_hooks:
-        log(f"Applying post-apply hooks...")
+        log("Applying post-apply hooks...")
         script_file = app_hooks_dir_path / "post_apply.sh"
-        run_shell_script(script_file, timeout=60, on_output=log)
+        run_shell_script(
+            script_file, timeout=60, on_output=log, ignore_errors=ignore_errors
+        )
