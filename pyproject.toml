@@ -18,6 +18,9 @@ dependencies = [
   "gitpython"
 ]
 
+[tool.setuptools.package-data]
+"dotctl" = ["templates/*.yaml"]
+
 keywords = [
   "dotfiles",
   "config",

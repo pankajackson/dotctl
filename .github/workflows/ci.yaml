@@ -34,3 +34,7 @@ jobs:
         run: python -m build
       - name: Test Install
         run: python -m pip install .
+      - name: Test Command
+        run: dotctl init -e dev
+      - name: Test Command
+        run: dotctl list
