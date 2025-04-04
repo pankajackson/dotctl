@@ -6,4 +6,4 @@ SCRIPT=$(basename "$0")
 CWD=$(dirname "$0")
 BASEDIR=$(realpath $CWD)
 
-echo "Running pre apply hook $SCRIPT from $BASEDIR"
+echo "Running post apply hook $SCRIPT from $BASEDIR"

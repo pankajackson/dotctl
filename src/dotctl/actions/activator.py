@@ -4,6 +4,7 @@ from dotctl.utils import log
 from dotctl.handlers.data_handler import copy
 from dotctl.paths import app_profile_directory, app_config_file
 from dotctl.handlers.config_handler import conf_reader
+from dotctl.handlers.hooks_handler import run_hooks
 from dotctl.handlers.git_handler import (
     get_repo,
     get_repo_branches,
@@ -46,6 +47,7 @@ def apply(props: ActivatorProps) -> None:
             return
 
     config = conf_reader(config_file=Path(app_config_file))
+    run_hooks(pre_apply_hooks=True)
 
     for name, section in config.save.items():
         source_base_dir = profile_dir / name
@@ -67,4 +69,5 @@ def apply(props: ActivatorProps) -> None:
                 if sudo_pass is not None:
                     props.password = sudo_pass
 
+    run_hooks(post_apply_hooks=True)
     log("Profile saved successfully!")
