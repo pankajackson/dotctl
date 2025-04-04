@@ -19,11 +19,17 @@ from .actions.wiper import wipe, wiper_default_props
 class Action(Enum):
     INIT = "init"
     LIST = "list"
+    LS = "ls"
     SWITCH = "switch"
+    SW = "sw"
     SAVE = "save"
     APPLY = "apply"
     CREATE = "create"
+    NEW = "new"
     REMOVE = "remove"
+    RM = "rm"
+    DELETE = "delete"
+    DEL = "del"
     IMPORT = "import"
     EXPORT = "export"
     WIPE = "wipe"
@@ -43,9 +49,15 @@ class DotCtl:
             Action.SAVE: self.save_dots,
             Action.APPLY: self.apply_dots,
             Action.LIST: self.list_profiles,
+            Action.LS: self.list_profiles,
             Action.SWITCH: self.switch_profile,
+            Action.SW: self.switch_profile,
             Action.CREATE: self.create_profile,
+            Action.NEW: self.create_profile,
             Action.REMOVE: self.remove_profile,
+            Action.RM: self.remove_profile,
+            Action.DELETE: self.remove_profile,
+            Action.DEL: self.remove_profile,
             Action.EXPORT: self.export_profile,
             Action.IMPORT: self.import_profile,
             Action.WIPE: self.wipe_profile,

@@ -132,7 +132,7 @@ def get_parser() -> argparse.ArgumentParser:
 
     # Remove Parser
     remove_parser = subparsers.add_parser(
-        "remove", aliases=["del"], help="Delete existing profile"
+        "remove", aliases=["del", "delete", "rm"], help="Delete existing profile"
     )
     remove_parser.add_argument(
         "profile",
