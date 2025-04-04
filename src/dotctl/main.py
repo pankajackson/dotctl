@@ -13,6 +13,7 @@ from .actions.creator import create, creator_default_props
 from .actions.remover import remove, remover_default_props
 from .actions.exporter import exporter, exporter_default_props
 from .actions.importer import importer, importer_default_props
+from .actions.wiper import wipe, wiper_default_props
 
 
 class Action(Enum):
@@ -25,6 +26,7 @@ class Action(Enum):
     REMOVE = "remove"
     IMPORT = "import"
     EXPORT = "export"
+    WIPE = "wipe"
     HELP = "help"
     VERSION = "version"
 
@@ -46,6 +48,7 @@ class DotCtl:
             Action.REMOVE: self.remove_profile,
             Action.EXPORT: self.export_profile,
             Action.IMPORT: self.import_profile,
+            Action.WIPE: self.wipe_profile,
         }
         action_methods.get(self.action, lambda: None)()
 
@@ -110,6 +113,11 @@ class DotCtl:
             importer_default_props, "skip_sudo", "password", "profile"
         )
         importer(props)
+
+    def wipe_profile(self):
+        """Wipe dotfiles profile."""
+        props = self._build_props(wiper_default_props, "no_confirm")
+        wipe(props)
 
 
 @exception_handler
