@@ -1,15 +1,15 @@
 from pathlib import Path
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from dotctl.paths import app_profile_directory
 from dotctl.utils import log
 from dotctl.handlers.config_handler import conf_initializer
+from dotctl.handlers.hooks_handler import hooks_initializer
 from dotctl.handlers.git_handler import (
     is_git_repo,
     clone_repo,
     create_local_repo,
     checkout_branch,
 )
-from git import Repo, GitCommandError
 from dotctl.exception import exception_handler
 from dotctl import __DEFAULT_PROFILE__
 
@@ -61,4 +61,5 @@ def initialise(props: InitializerProps):
         env=props.env,
         custom_config=props.custom_config,
     )
+    hooks_initializer()
     log("Profile initialized successfully.")

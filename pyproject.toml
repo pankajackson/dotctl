@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [tool.setuptools.package-data]
-"dotctl" = ["templates/*.yaml"]
+"dotctl" = ["templates/*.yaml", "hooks/*.sh"]
 
 keywords = [
   "dotfiles",
