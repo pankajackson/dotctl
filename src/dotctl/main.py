@@ -109,7 +109,9 @@ class DotCtl:
 
     def create_profile(self):
         """Create a new dotfiles profile."""
-        props = self._build_props(creator_default_props, "profile", "fetch")
+        props = self._build_props(
+            creator_default_props, "profile", "fetch", "config", "env"
+        )
         create(props)
 
     def remove_profile(self):

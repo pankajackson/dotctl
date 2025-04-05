@@ -10,10 +10,6 @@ export:
       - .bin
       - bin
     location: $HOME/
-  # plasma_saver:
-  #   entries:
-  #     - profiles
-  #   location: $PLASMA_SAVER_DIR
   root_share_folder:
     entries:
       - plasma
