@@ -86,7 +86,14 @@ class DotCtl:
     def apply_dots(self):
         """Apply a saved dotfiles profile."""
         props = self._build_props(
-            activator_default_props, "skip_sudo", "password", "profile"
+            activator_default_props,
+            "skip_sudo",
+            "password",
+            "profile",
+            "skip_hooks",
+            "skip_pre_hooks",
+            "skip_post_hooks",
+            "ignore_hook_errors",
         )
         apply(props)
 
@@ -160,6 +167,10 @@ def main():
         "config": getattr(args, "config", None),
         "env": getattr(args, "env", None),
         "skip_sudo": getattr(args, "skip_sudo", False),
+        "skip_hooks": getattr(args, "skip_hooks", False),
+        "skip_pre_hooks": getattr(args, "skip_pre_hooks", False),
+        "skip_post_hooks": getattr(args, "skip_post_hooks", False),
+        "ignore_hook_errors": getattr(args, "ignore_hook_errors", False),
         "password": getattr(args, "password", None),
         "details": getattr(args, "details", False),
         "fetch": getattr(args, "fetch", False),

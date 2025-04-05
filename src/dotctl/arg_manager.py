@@ -179,6 +179,30 @@ def get_parser() -> argparse.ArgumentParser:
         help="Profile to apply to",
         default=None,
     )
+    apply_parser.add_argument(
+        "--skip-hooks",
+        required=False,
+        action="store_true",
+        help="Skip all hooks",
+    )
+    apply_parser.add_argument(
+        "--skip-pre-hooks",
+        required=False,
+        action="store_true",
+        help="Skip pre hooks",
+    )
+    apply_parser.add_argument(
+        "--skip-post-hooks",
+        required=False,
+        action="store_true",
+        help="Skip post hooks",
+    )
+    apply_parser.add_argument(
+        "--ignore-hook-errors",
+        required=False,
+        action="store_true",
+        help="Ignore hooks errors",
+    )
 
     # Export Parser
     export_parser = subparsers.add_parser("export", help="Export profile")
