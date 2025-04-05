@@ -117,6 +117,16 @@ def create_branch(repo: Repo, branch: str) -> None:
     new_branch.checkout()
 
 
+def create_empty_branch(repo: Repo, branch: str) -> None:
+    if repo.bare:
+        raise Exception("Error: The repository is bare. Cannot create a branch.")
+    repo.git.checkout("--orphan", branch)
+    repo.git.rm("-rf", ".")
+    has_commits = repo.head.is_valid() if repo.head else False
+    if not has_commits:
+        repo.index.commit("Initial commit for dotctl")
+
+
 def checkout_branch(repo: Repo, branch: str) -> None:
     local_profiles, remote_profiles, active_profile, all_profiles = get_repo_branches(
         repo
