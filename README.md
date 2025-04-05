@@ -1,151 +1,281 @@
 # DotCtl
 
-A CLI Tool to Manage DOT Files/Settings/Configurations.
+**dotctl** is a powerful CLI tool to profile your OS by saving, applying, exporting, and importing system configurations
+as named profiles. Designed to manage dotfiles and service configurations in a centralized Git repository
+(local or remote), dotctl enables seamless system replication across machines. Supports pre/post hook scripts,
+making it ideal for setting up servers or desktops with consistent environments
 
-## Features
+## 🚀 Features
 
-- Save Profile: Save existing dot files/config/settings.
-- Import Profile: Import existing dot files/config/settings from a `.plsv` file.
-- Export Profile: Export and share existing dot files/config/settings to a `.plsv` file.
-- Manage multiple profiles with ease.
+- 📦 **Profile Management** — Create, list, switch, remove, save, and apply system profiles.
+- 🌀 **Pre/Post Hooks** — Run self managed scripts before or after applying a profile (e.g. install packages, restart services).
+- 🔄 **Git Integration** — Sync profiles with local or remote Git repositories.
+- 📁 **Data Sync** — Export/import full configurations with `.dtsv` files for easy sharing and backup.
+- 🧩 **Custom Configuration** — Use a `dotctl.yaml` to define how and what gets tracked in a profile.
 
-## Installation
+## 🔧 Installation
 
 ```sh
 pip install dotctl
 ```
 
-## CLI Guide
+## 📘 Usage
 
-### Save Profile
-
-```sh
-dotctl save <profile_name>
+```bash
+dotctl [OPTIONS] <COMMAND> [ARGS]
 ```
 
-**Example:**
+Run `dotctl -h` for help.
 
-```sh
-dotctl save MyProfile
-```
+## 🛠️ Commands
 
-**Options:**
+### 📁 `init`
 
-- `-f, --force` → Overwrite already saved profiles.
-- `-c <path>, --config-file <path>` → Use external config file.
-- `-e <env>, --env <env>` → Desktop environment (e.g., KDE).
-- `-p <password>, --password <password>` → Sudo Password to authorize restricted data (e.g., `/usr/share`).
-- `--include-global` → Include data from the global data directory (`/usr/share`).
-- `--include-sddm` → Include SDDM data/configs (`/usr/share/sddm`, `/etc/sddm.conf.d`).
-- `--sddm-only` → Operate only on SDDM configurations (**Note:** Requires sudo password).
-- `--skip-sudo` → Skip all sudo operations.
+Initialize a new profile and optionally link it to a Git repo.
 
-### Remove Profile
+- **Syntax**
 
-```sh
-dotctl remove <profile_name>
-```
+  ```bash
+  usage: dotctl init [-h] [-u <git-url>] [-p <profile>] [-c <path>] [-e <env>]
+  ```
 
-**Example:**
+- **Example**
 
-```sh
-dotctl remove MyProfile
-```
+  ```bash
+  # initialize a profile for kde environment
+  dotctl init -e kde
 
-### List Profiles
+  # initialize a profile for a remote repo and activate profile mydesktop
+  dotctl init -u https://github.com/user880/dots.git -p mydesktop
 
-```sh
-dotctl list
-```
+  # initialize a profile with a custom config
+  dotctl init -c ./my_custom_config.yaml
+  ```
 
-### Apply Profile
+- **Options**
 
-```sh
-dotctl apply <profile_name>
-```
+  - `-e, --env` : Environment to initialize the profile for.
+  - `-u, --url` : git URL to fetch the profile from.
+  - `-p, --profile` : Profile to initialize after initialization.
+  - `-c, --config` : Path to a custom config file.
 
-**Example:**
+### 💾 `save`
 
-```sh
-dotctl apply MyProfile
-```
+Save the current system state and configuration to the active profile.
 
-**Options:**
+- **Syntax**
 
-- `-p <password>, --password <password>` → Sudo Password for restricted data.
-- `--sddm-only` → Apply only SDDM configurations (**Requires sudo password**).
-- `--skip-global` → Skip data from the global directory (`/usr/share`).
-- `--skip-sddm` → Skip SDDM configurations.
-- `--skip-sudo` → Skip all sudo operations.
+  ```bash
+  usage: dotctl save [-h] [-p <password>] [--skip-sudo] [profile]
+  ```
 
-### Import Profile
+- **Example**
 
-```sh
-dotctl import <profile_path>
-```
+  ```bash
+  dotctl save
+  dotctl save my_web_server
+  dotctl save my_web_server --skip-sudo
+  dotctl save my_web_server -p mYsecretp@ssw0rd
+  ```
 
-**Example:**
+- **Options**
 
-```sh
-dotctl import MyProfile.plsv
-```
+  - `--skip-sudo` - Skip the sudo prompt to ignore restricted resources.
+  - `-p, --password` - Password to access restricted resources.
 
-**Options:**
+### 📋 `list` / `ls`
 
-- `-p <password>, --password <password>` → Sudo Password for restricted data.
-- `--config-only` → Apply only dot files/configurations (`~/.config`).
-- `--data-only` → Apply only dot files/data (`~/.local/share`).
-- `--sddm-only` → Apply only SDDM configurations (**Requires sudo password**).
-- `--skip-global` → Skip global data.
-- `--skip-sddm` → Skip SDDM configurations.
-- `--skip-sudo` → Skip all sudo operations.
+List all profiles, optionally show details or fetch remote info.
 
-### Export Profile
+- **Syntax**
 
-```sh
-dotctl export <profile_path>
-```
+  ```bash
+  usage: dotctl list [-h] [--details] [--fetch]
+  ```
 
-**Example:**
+- **Example**
 
-```sh
-dotctl export MyProfile.plsv
-```
+  ```bash
+  dotctl list
+  dotctl list --details
+  dotctl list --fetch
+  ```
 
-**Options:**
+- **Options**
 
-- `-p <password>, --password <password>` → Sudo Password for restricted data.
-- `--config-only` → Export only dot files/configurations.
-- `--data-only` → Export only dot files/data.
-- `--sddm-only` → Export only SDDM configurations (**Requires sudo password**).
-- `--skip-global` → Skip global data.
-- `--skip-sddm` → Skip SDDM configurations.
-- `--skip-sudo` → Skip all sudo operations.
+  - `--details` - Show details of the profile.
+  - `--fetch` - Fetch/update remote info before listing.
 
-### Wipe All Profiles
+### 🔀 `switch` / `sw`
 
-```sh
-dotctl wipe
-```
+Switch to another profile.
 
-### Help
+- **Syntax**
 
-```sh
-dotctl -h
-dotctl <action> -h
-```
+  ```bash
+  usage: dotctl switch [-h] [--fetch] [profile]
+  ```
 
-**Example:**
+- **Example**
 
-```sh
-dotctl import -h
-```
+  ```bash
+  dotctl sw MyProfile
+  dotctl switch MyProfile --fetch
+  ```
 
-### Version
+- **Options**
 
-```sh
-dotctl -v
-```
+  - `--fetch` - Fetch/update remote info before switching.
+
+### 🆕 `create` / `new`
+
+Create a new empty profile.
+
+- **Syntax**
+
+  ```bash
+  usage: dotctl create [-h] [--fetch] profile
+  ```
+
+- **Example**
+
+  ```bash
+  dotctl create MyProfile
+  dotctl new MyProfile --fetch
+  ```
+
+- **Options**
+
+  - `--fetch` - Fetch/update remote info before listing.
+
+### ❌ `remove` / `rm` / `delete` / `del`
+
+Delete an existing profile locally and/or remotely.
+
+- **Syntax**
+
+  ```bash
+  usage: dotctl remove [-h] [-y] [--fetch] profile
+  ```
+
+- **Example**
+
+  ```bash
+  dotctl rm MyProfile
+  dotctl del MyProfile --fetch
+  dotctl del MyProfile --no-confirm
+  ```
+
+- **Options**
+
+  - `--fetch` - Fetch/update remote info before listing.
+  - `-y, --no-confirm` - Do not prompt for confirmation before deleting.
+
+### 🧪 `apply`
+
+Apply a saved profile to your current machine.
+
+- **Syntax**
+
+  ```bash
+  usage: dotctl apply [-h] [-p <password>] [--skip-sudo] [--skip-hooks] [--skip-pre-hooks] [--skip-post-hooks] [--ignore-hook-errors] [profile]
+  ```
+
+- **Example**
+
+  ```bash
+  dotctl apply
+  dotctl apply MyProfile
+  dotctl apply MyProfile --skip-sudo
+  dotctl apply MyProfile --password mYsecretp@ssw0rd
+  dotctl apply MyProfile --skip-hooks
+  dotctl apply MyProfile --skip-pre-hooks
+  dotctl apply MyProfile --skip-post-hooks
+  dotctl apply --ignore-hook-errors
+  ```
+
+- **Options**
+
+  - `-p, --password` - Password to access restricted resources.
+  - `--skip-sudo` - Skip the sudo prompt to ignore restricted resources.
+  - `--skip-hooks`: Skip the hooks.
+  - `--skip-pre-hooks`: Skip the pre-hooks.
+  - `--skip-post-hooks`: Skip the post-hooks.
+  - `--ignore-hook-errors`: Ignore errors in hooks.
+
+- **Fine-grained control**
+
+  - `--skip-pre-hooks`
+  - `--skip-post-hooks`
+  - `--ignore-hook-errors`
+
+### 📤 `export`
+
+Export a profile (along with data) into a `.dtsv` file.
+
+- **Syntax**
+
+  ```bash
+  usage: dotctl export [-h] [-p <password>] [--skip-sudo] [profile]
+  ```
+
+- **Example**
+
+  ```bash
+  dotctl export
+  dotctl export my_web_server
+  dotctl export my_web_server --skip-sudo
+  dotctl export my_web_server -p mYsecretp@ssw0rd
+  ```
+
+- **Options**
+
+  - `--skip-sudo` - Skip the sudo prompt to ignore restricted resources.
+  - `-p, --password` - Password to access restricted resources.
+
+### 📥 `import`
+
+Import a `.dtsv` profile from another system.
+
+- **Syntax**
+
+  ```bash
+  usage: dotctl import [-h] [-p <password>] [--skip-sudo] profile_file.dtsv
+  ```
+
+- **Example**
+
+  ```bash
+  dotctl import my_web_server.dtsv
+  dotctl import /data/backup/my_web_server.dtsv --skip-sudo
+  dotctl import my_web_server.dtsv -p mYsecretp@ssw0rd
+  ```
+
+- **Options**
+
+  - `--skip-sudo` - Skip the sudo prompt to ignore restricted resources.
+  - `-p, --password` - Password to access restricted resources.
+
+### 🔥 `wipe`
+
+Wipe all profiles from the local system.
+
+- **Syntax**
+
+  ```bash
+  usage: dotctl wipe [-h] [-y]
+  ```
+
+- **Example**
+
+  ```bash
+  dotctl wipe
+  dotctl wipe -y
+  ```
+
+- **Options**
+
+  - `-y, --no-confirm`: Do not prompt for confirmation before wiping profiles.
 
 ---
 
