@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 from dotctl.paths import app_home_directory
-from dotctl import __APP_NAME__, __COMMANDS_REQ_
+from dotctl import __APP_NAME__, __COMMANDS_REQ__
 from .utils import log
 
 
@@ -33,7 +33,7 @@ def exception_handler(func):
     return inner_func
 
 
-def check_req_commands(cmd_list: list[str] = __COMMANDS_REQ_):
+def check_req_commands(cmd_list: list[str] = __COMMANDS_REQ__):
     required_cmd_list = []
     for cmd in cmd_list:
         if not shutil.which(cmd):

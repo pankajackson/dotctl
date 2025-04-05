@@ -13,18 +13,26 @@ from .actions.creator import create, creator_default_props
 from .actions.remover import remove, remover_default_props
 from .actions.exporter import exporter, exporter_default_props
 from .actions.importer import importer, importer_default_props
+from .actions.wiper import wipe, wiper_default_props
 
 
 class Action(Enum):
     INIT = "init"
     LIST = "list"
+    LS = "ls"
     SWITCH = "switch"
+    SW = "sw"
     SAVE = "save"
     APPLY = "apply"
     CREATE = "create"
+    NEW = "new"
     REMOVE = "remove"
+    RM = "rm"
+    DELETE = "delete"
+    DEL = "del"
     IMPORT = "import"
     EXPORT = "export"
+    WIPE = "wipe"
     HELP = "help"
     VERSION = "version"
 
@@ -41,11 +49,18 @@ class DotCtl:
             Action.SAVE: self.save_dots,
             Action.APPLY: self.apply_dots,
             Action.LIST: self.list_profiles,
+            Action.LS: self.list_profiles,
             Action.SWITCH: self.switch_profile,
+            Action.SW: self.switch_profile,
             Action.CREATE: self.create_profile,
+            Action.NEW: self.create_profile,
             Action.REMOVE: self.remove_profile,
+            Action.RM: self.remove_profile,
+            Action.DELETE: self.remove_profile,
+            Action.DEL: self.remove_profile,
             Action.EXPORT: self.export_profile,
             Action.IMPORT: self.import_profile,
+            Action.WIPE: self.wipe_profile,
         }
         action_methods.get(self.action, lambda: None)()
 
@@ -71,7 +86,14 @@ class DotCtl:
     def apply_dots(self):
         """Apply a saved dotfiles profile."""
         props = self._build_props(
-            activator_default_props, "skip_sudo", "password", "profile"
+            activator_default_props,
+            "skip_sudo",
+            "password",
+            "profile",
+            "skip_hooks",
+            "skip_pre_hooks",
+            "skip_post_hooks",
+            "ignore_hook_errors",
         )
         apply(props)
 
@@ -111,6 +133,11 @@ class DotCtl:
         )
         importer(props)
 
+    def wipe_profile(self):
+        """Wipe dotfiles profile."""
+        props = self._build_props(wiper_default_props, "no_confirm")
+        wipe(props)
+
 
 @exception_handler
 def main():
@@ -140,6 +167,10 @@ def main():
         "config": getattr(args, "config", None),
         "env": getattr(args, "env", None),
         "skip_sudo": getattr(args, "skip_sudo", False),
+        "skip_hooks": getattr(args, "skip_hooks", False),
+        "skip_pre_hooks": getattr(args, "skip_pre_hooks", False),
+        "skip_post_hooks": getattr(args, "skip_post_hooks", False),
+        "ignore_hook_errors": getattr(args, "ignore_hook_errors", False),
         "password": getattr(args, "password", None),
         "details": getattr(args, "details", False),
         "fetch": getattr(args, "fetch", False),

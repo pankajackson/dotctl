@@ -132,7 +132,7 @@ def get_parser() -> argparse.ArgumentParser:
 
     # Remove Parser
     remove_parser = subparsers.add_parser(
-        "remove", aliases=["del"], help="Delete existing profile"
+        "remove", aliases=["del", "delete", "rm"], help="Delete existing profile"
     )
     remove_parser.add_argument(
         "profile",
@@ -178,6 +178,30 @@ def get_parser() -> argparse.ArgumentParser:
         type=str,
         help="Profile to apply to",
         default=None,
+    )
+    apply_parser.add_argument(
+        "--skip-hooks",
+        required=False,
+        action="store_true",
+        help="Skip all hooks",
+    )
+    apply_parser.add_argument(
+        "--skip-pre-hooks",
+        required=False,
+        action="store_true",
+        help="Skip pre hooks",
+    )
+    apply_parser.add_argument(
+        "--skip-post-hooks",
+        required=False,
+        action="store_true",
+        help="Skip post hooks",
+    )
+    apply_parser.add_argument(
+        "--ignore-hook-errors",
+        required=False,
+        action="store_true",
+        help="Ignore hooks errors",
     )
 
     # Export Parser
@@ -225,5 +249,16 @@ def get_parser() -> argparse.ArgumentParser:
         required=False,
         action="store_true",
         help="Skip all sudo operations",
+    )
+    # Wipe Parser
+    wipe_parser = subparsers.add_parser("wipe", help="Wipe Profiles")
+
+    wipe_parser.add_argument(
+        "-y",
+        "--no-confirm",
+        required=False,
+        action="store_true",
+        help="Wipe Profiles without confirmation",
+        default=False,
     )
     return parser
