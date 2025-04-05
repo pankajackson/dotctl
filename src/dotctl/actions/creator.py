@@ -1,3 +1,5 @@
+from datetime import datetime
+import socket
 import sys
 from pathlib import Path
 from dataclasses import dataclass
@@ -8,11 +10,17 @@ from dotctl.exception import exception_handler
 from dotctl.handlers.hooks_handler import hooks_initializer
 from dotctl.handlers.config_handler import conf_initializer
 from dotctl.handlers.git_handler import (
+    add_changes,
+    commit_changes,
     get_repo,
     get_repo_branches,
     git_fetch,
     create_branch,
     create_empty_branch,
+    is_remote_repo,
+    is_repo_changed,
+    push_existing_branch,
+    push_new_branch,
 )
 from dotctl import __APP_NAME__, __DEFAULT_PROFILE__
 
@@ -58,4 +66,24 @@ def create(props: CreatorProps):
         hooks_initializer()
     else:
         create_branch(repo, props.profile)
+
+    add_changes(repo=repo)
+    if is_repo_changed(repo=repo):
+        hostname = socket.gethostname()
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        full_message = f"{hostname} | Profile Initialized | {timestamp}"
+        commit_changes(repo=repo, message=full_message)
+        is_remote, _ = is_remote_repo(repo=repo)
+        _, remote_profiles, active_profile, all_profiles = get_repo_branches(repo)
+        if is_remote:
+            if props.profile not in remote_profiles:
+                git_fetch(repo=repo)
+                _, remote_profiles, active_profile, all_profiles = get_repo_branches(
+                    repo
+                )
+            if not props.profile in remote_profiles:
+                push_new_branch(repo=repo)
+            else:
+                push_existing_branch(repo=repo)
+
     log(f"Profile '{props.profile}' created and activated successfully.")
