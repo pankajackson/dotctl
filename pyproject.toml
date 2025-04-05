@@ -19,9 +19,6 @@ dependencies = [
   "gitpython"
 ]
 
-[tool.setuptools.package-data]
-"dotctl" = ["templates/*.yaml", "hooks/*.sh"]
-
 keywords = [
   "dotfiles",
   "config",
@@ -37,7 +34,6 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
     "Topic :: System :: Archiving :: Backup",
     "Topic :: Utilities",
@@ -50,3 +46,6 @@ dotctl = "dotctl.main:main"
 Homepage = "https://github.com/pankajackson/dotctl"
 "Bug Tracker" = "https://github.com/pankajackson/dotctl/issues"
 Source = "https://github.com/pankajackson/dotctl"
+
+[tool.setuptools.package-data]
+dotctl = ["templates/*.yaml", "hooks/*.sh"]
