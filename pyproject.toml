@@ -8,7 +8,7 @@ version = "x.x.x"
 authors = [
   { name = "Pankaj Jackson", email = "pankajackson@live.co.uk" }
 ]
-description = "Command Line Interface to manage (save, export, import) dot files in the form of profiles."
+description = "A powerful CLI tool to profile your OS by saving, applying, exporting, and importing system configurations as named profiles. Designed to manage dot files and service configurations in a centralized Git repository (local or remote), dotctl enables seamless system replication across machines. Supports pre/post hook scripts, making it ideal for setting up servers or desktops with consistent environments."
 readme = "README.md"
 license = { file = "LICENSE" }
 
@@ -30,11 +30,11 @@ keywords = [
 ]
 
 classifiers = [
-    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3.13",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
