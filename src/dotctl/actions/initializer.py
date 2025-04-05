@@ -16,7 +16,7 @@ from dotctl import __DEFAULT_PROFILE__
 
 @dataclass
 class InitializerProps:
-    custom_config: Path | None
+    config: str | Path | None
     git_url: str | None
     profile: str | None
     env: str | None
@@ -24,7 +24,7 @@ class InitializerProps:
 
 
 initializer_default_props = InitializerProps(
-    custom_config=None,
+    config=None,
     git_url=None,
     profile=None,
     env=None,
@@ -57,9 +57,12 @@ def initialise(props: InitializerProps):
     if props.profile:
         checkout_branch(repo, props.profile)
 
+    if props.config is not None and isinstance(props.config, str):
+        props.config = Path(props.config)
+
     conf_initializer(
         env=props.env,
-        custom_config=props.custom_config,
+        custom_config=props.config,
     )
     hooks_initializer()
     log("Profile initialized successfully.")

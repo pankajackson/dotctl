@@ -129,6 +129,22 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Fetch and Sync profile information from Cloud before creating it",
     )
+    create_parser.add_argument(
+        "-c",
+        "--config",
+        type=valid_config_file,
+        help="Use external config file.",
+        metavar="<path>",
+        default=None,
+    )
+    create_parser.add_argument(
+        "-e",
+        "--env",
+        type=str,
+        help="Desktop environment (e.g. kde)",
+        metavar="<env>",
+        default=None,
+    )
 
     # Remove Parser
     remove_parser = subparsers.add_parser(
