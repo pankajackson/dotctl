@@ -10,7 +10,8 @@ authors = [
 ]
 description = "A powerful CLI tool to profile your OS by saving, applying, exporting, and importing system configurations as named profiles. Designed to manage dot files and service configurations in a centralized Git repository (local or remote), dotctl enables seamless system replication across machines. Supports pre/post hook scripts, making it ideal for setting up servers or desktops with consistent environments."
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 
 requires-python = ">=3.10"
 dependencies = [
