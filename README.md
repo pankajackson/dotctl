@@ -5,6 +5,33 @@ as named profiles. Designed to manage dotfiles and service configurations in a c
 (local or remote), dotctl enables seamless system replication across machines. Supports pre/post hook scripts,
 making it ideal for setting up servers or desktops with consistent environments
 
+## Table of Contents
+
+- [DotCtl](#dotctl)
+  - [Table of Contents](#table-of-contents)
+  - [🚀 Features](#-features)
+  - [🔧 Installation](#-installation)
+  - [📘 Usage](#-usage)
+  - [🛠️ Commands](#️-commands)
+    - [📁 `init`](#-init)
+    - [💾 `save`](#-save)
+    - [📋 `list` / `ls`](#-list--ls)
+    - [🔀 `switch` / `sw`](#-switch--sw)
+    - [🆕 `create` / `new`](#-create--new)
+    - [❌ `remove` / `rm` / `delete` / `del`](#-remove--rm--delete--del)
+    - [🧪 `apply`](#-apply)
+    - [📤 `export`](#-export)
+    - [📥 `import`](#-import)
+    - [🔥 `wipe`](#-wipe)
+  - [Development \& Publishing Guide](#development--publishing-guide)
+    - [Setup Development Environment](#setup-development-environment)
+    - [Build the Package](#build-the-package)
+    - [Publish to TestPyPI](#publish-to-testpypi)
+    - [Publish to PyPI](#publish-to-pypi)
+  - [Who do I talk to?](#who-do-i-talk-to)
+
+---
+
 ## 🚀 Features
 
 - 📦 **Profile Management** — Create, list, switch, remove, save, and apply system profiles.
