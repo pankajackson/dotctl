@@ -227,6 +227,8 @@ For a service like **nginx**, your profile might:
 
 This diagram shows the typical lifecycle of using a `dotctl` profile, from saving configs to applying them on another machine:
 
+![Profile Workflow Diagram](docs/diagrams/dotctl_profile_workflow_diagram.drawio_wm.png)
+
 ```js
             ┌──────────────┐
             │  dotctl.yml  │
