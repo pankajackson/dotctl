@@ -219,6 +219,14 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Ignore hooks errors",
     )
+    apply_parser.add_argument(
+        "--hooks-timeout",
+        required=False,
+        type=int,
+        help="Hook timeout in seconds",
+        metavar="<timeout>",
+        default=60,
+    )
 
     # Export Parser
     export_parser = subparsers.add_parser("export", help="Export profile")

@@ -23,6 +23,7 @@ class ActivatorProps:
     skip_pre_hooks: bool
     skip_post_hooks: bool
     ignore_hook_errors: bool
+    hooks_timeout: int
 
 
 activator_default_props = ActivatorProps(
@@ -33,6 +34,7 @@ activator_default_props = ActivatorProps(
     skip_pre_hooks=False,
     skip_post_hooks=False,
     ignore_hook_errors=False,
+    hooks_timeout=60,
 )
 
 
@@ -56,7 +58,11 @@ def apply(props: ActivatorProps) -> None:
 
     config = conf_reader(config_file=Path(app_config_file))
     if not props.skip_hooks and not props.skip_pre_hooks:
-        run_hooks(pre_apply_hooks=True, ignore_errors=props.ignore_hook_errors)
+        run_hooks(
+            pre_apply_hooks=True,
+            ignore_errors=props.ignore_hook_errors,
+            timeout=props.hooks_timeout,
+        )
 
     for name, section in config.save.items():
         source_base_dir = profile_dir / name
@@ -79,5 +85,9 @@ def apply(props: ActivatorProps) -> None:
                     props.password = sudo_pass
 
     if not props.skip_hooks and not props.skip_post_hooks:
-        run_hooks(post_apply_hooks=True, ignore_errors=props.ignore_hook_errors)
+        run_hooks(
+            post_apply_hooks=True,
+            ignore_errors=props.ignore_hook_errors,
+            timeout=props.hooks_timeout,
+        )
     log("Profile saved successfully!")

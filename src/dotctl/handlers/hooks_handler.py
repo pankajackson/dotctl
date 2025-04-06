@@ -94,17 +94,18 @@ def run_hooks(
     pre_apply_hooks: bool = False,
     post_apply_hooks: bool = False,
     ignore_errors: bool = False,
+    timeout: int = 60,
 ):
     if pre_apply_hooks:
         log("Applying pre-apply hooks...")
         script_file = app_hooks_dir_path / "pre_apply.sh"
         run_shell_script(
-            script_file, timeout=60, on_output=log, ignore_errors=ignore_errors
+            script_file, timeout=timeout, on_output=log, ignore_errors=ignore_errors
         )
 
     if post_apply_hooks:
         log("Applying post-apply hooks...")
         script_file = app_hooks_dir_path / "post_apply.sh"
         run_shell_script(
-            script_file, timeout=60, on_output=log, ignore_errors=ignore_errors
+            script_file, timeout=timeout, on_output=log, ignore_errors=ignore_errors
         )
