@@ -421,7 +421,7 @@ dotctl sw MyProfile --fetch
 Create a new, empty profile.
 
 ```sh
-usage: dotctl create [-h] [--fetch] [-c <path>] [-e <env>] profile
+dotctl create [-h] [--fetch] [-c <path>] [-e <env>] profile
 ```
 
 **Examples:**
@@ -473,7 +473,7 @@ dotctl del MyProfile -y
 Apply a saved profile.
 
 ```sh
-usage: dotctl apply [-h] [-p <password>] [--skip-sudo] [--skip-hooks] [--skip-pre-hooks] [--skip-post-hooks] [--ignore-hook-errors] [--hooks-timeout <timeout>] [profile]
+dotctl apply [-h] [-p <password>] [--skip-sudo] [--skip-hooks] [--skip-pre-hooks] [--skip-post-hooks] [--ignore-hook-errors] [--hooks-timeout <timeout>] [profile]
 ```
 
 **Examples:**
