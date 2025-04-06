@@ -12,6 +12,15 @@ Designed for developers and sysadmins, it supports pre/post hook scripts and is 
 - [DotCtl](#dotctl)
   - [📚 Table of Contents](#-table-of-contents)
   - [🚀 Features](#-features)
+  - [📁 Profile Config Structure (`dotctl.yaml`)](#-profile-config-structure-dotctlyaml)
+    - [🧠 Concept Overview](#-concept-overview)
+    - [🗝 Available Path Keys](#-available-path-keys)
+    - [✅ Example: Minimal Config](#-example-minimal-config)
+    - [💻 Real World: Full Ubuntu + KDE Config](#-real-world-full-ubuntu--kde-config)
+    - [📦 Profile Usage Flow (e.g., nginx)](#-profile-usage-flow-eg-nginx)
+  - [🔄 Profile Workflow Diagram](#-profile-workflow-diagram)
+  - [📊 Profile Block Table](#-profile-block-table)
+  - [🔁 Example Workflow Table](#-example-workflow-table)
   - [🔧 Installation](#-installation)
   - [📘 Usage](#-usage)
   - [🛠️ Commands](#️-commands)
@@ -41,6 +50,255 @@ Designed for developers and sysadmins, it supports pre/post hook scripts and is 
 - 🔄 **Git Integration** — Sync profiles with local or remote Git repositories.
 - 📁 **Portable Configs** — Export/import profiles using `.dtsv` files for easy backups and sharing.
 - ⚙️ **Custom Configs** — Define tracking rules via `dotctl.yaml`.
+
+---
+
+## 📁 Profile Config Structure (`dotctl.yaml`)
+
+The `dotctl.yml` config file defines what files and directories to **track**, **save**, and **export** as part of a system profile. This enables seamless migration, sharing, and restoration of system configs and personalizations—perfect for dotfiles, apps, or entire setups like KDE.
+
+### 🧠 Concept Overview
+
+The config has two main sections:
+
+- **`save`**:  
+   Specifies config files or directories that should be version-controlled (typically small files like dotfiles).  
+   These are **committed to Git** and restored via `dotctl apply`.
+- **`export`**:  
+   For large or non-versioned files (like fonts, themes, or binaries) that **shouldn't go into Git**, but you still want to package and move using `dotctl export`/`import`.  
+   This is helpful in offline environments or when syncing across machines.
+
+Each section can define **any number of data blocks**, and every block contains:
+
+- `location`: A base directory (like `$HOME` or `$CONFIG_DIR`).
+- `entries`: A list of files/directories to include relative to the `location`.
+
+### 🗝 Available Path Keys
+
+To simplify path definitions, these keys can be used in `location`:
+
+| Key               | Path             |
+| ----------------- | ---------------- |
+| `$HOME`           | `/home/<user>`   |
+| `$APP_DIR`        | `~/.dotctl`      |
+| `$CONFIG_DIR`     | `~/.config`      |
+| `$SHARE_DIR`      | `~/.local/share` |
+| `$BIN_DIR`        | `~/.local/bin`   |
+| `$SYS_SHARE_DIR`  | `/usr/share`     |
+| `$SYS_CONFIG_DIR` | `/etc`           |
+
+Use them to make profiles portable across systems.
+
+---
+
+### ✅ Example: Minimal Config
+
+```yaml
+save:
+  configs:
+    location: $HOME
+    entries:
+      - test.txt
+
+export:
+  share_folder:
+    location: $HOME/.local/share
+    entries: []
+  home_folder:
+    location: $HOME/
+    entries: []
+```
+
+---
+
+### 💻 Real World: Full Ubuntu + KDE Config
+
+```yaml
+save:
+  configs:
+    location: $CONFIG_DIR
+    entries:
+      - gtk-2.0
+      - gtk-3.0
+      - gtk-4.0
+      - Kvantum
+      - latte
+      - dolphinrc
+      - konsolerc
+      - kcminputrc
+      - kdeglobals
+      - kglobalshortcutsrc
+      - klipperrc
+      - krunnerrc
+      - kscreenlockerrc
+      - ksmserverrc
+      - kwinrc
+      - kwinrulesrc
+      - plasma-org.kde.plasma.desktop-appletsrc
+      - plasmarc
+      - plasmashellrc
+      - gtkrc
+      - gtkrc-2.0
+      - lattedockrc
+      - breezerc
+      - oxygenrc
+      - lightlyrc
+      - ksplashrc
+      - khotkeysrc
+      - autostart
+
+  app_layouts:
+    location: $HOME/.local/share/kxmlgui5
+    entries:
+      - dolphin
+      - konsole
+
+  home_folder:
+    location: $HOME/
+    entries:
+      - .zshrc
+      - .p10k.zsh
+
+  sddm_configs:
+    location: $SYS_CONFIG_DIR
+    entries:
+      - sddm.conf.d
+
+export:
+  home_folder:
+    location: $HOME/
+    entries:
+      - .fonts
+      - .themes
+      - .icons
+      - .wallpapers
+      - .conky
+      - .zsh
+      - .bin
+      - bin
+
+  share_folder:
+    location: $SHARE_DIR
+    entries:
+      - plasma
+      - kwin
+      - konsole
+      - fonts
+      - kfontinst
+      - color-schemes
+      - aurorae
+      - icons
+      - wallpapers
+
+  root_share_folder:
+    location: $SYS_SHARE_DIR
+    entries:
+      - plasma
+      - kwin
+      - konsole
+      - fonts
+      - kfontinst
+      - color-schemes
+      - aurorae
+      - icons
+      - wallpapers
+      - Kvantum
+      - themes
+
+  sddm:
+    location: $SYS_SHARE_DIR/sddm
+    entries:
+      - themes
+```
+
+---
+
+### 📦 Profile Usage Flow (e.g., nginx)
+
+For a service like **nginx**, your profile might:
+
+- `save:` files like `/etc/nginx/nginx.conf`, `/etc/nginx/sites-*`
+- Include a **pre-hook** to install nginx (`apt-get install -y nginx`)
+- Use a **post-hook** to reload the service (`systemctl reload nginx`)
+
+---
+
+## 🔄 Profile Workflow Diagram
+
+This diagram shows the typical lifecycle of using a `dotctl` profile, from saving configs to applying them on another machine:
+
+```js
+            ┌──────────────┐
+            │  dotctl.yml  │
+            └──────┬───────┘
+                   │
+         ┌─────────▼──────────┐
+         │  `save` Section    │  ◄──── Config Files
+         └────────┬───────────┘
+                  │
+         ┌────────▼───────────┐
+         │  dotctl save       │
+         └────────┬───────────┘
+                  │
+                  ▼
+         Push to Git Repository
+                  │
+                  ▼
+        ┌─────────────────────┐
+        │  Transfer to New PC │
+        └────────┬────────────┘
+                 │
+         ┌───────▼──────────┐
+         │  dotctl apply    │
+         └───────┬──────────┘
+                 │
+     ┌───────────▼────────────┐
+     │ Pre-hook (e.g. install)│
+     └───────────┬────────────┘
+                 ▼
+     Apply saved config files
+                 │
+  ┌──────────────▼─────────────────┐
+  │ Post-hook (e.g. restart/reload)│
+  └────────────────────────────────┘
+
+                 │
+                 ▼
+        ┌─────────────────────┐
+        │     dotctl export   │
+        └────────┬────────────┘
+                 ▼
+          Create `.dtsv` file
+                 │
+        Transfer `.dtsv` file
+                 ▼
+        ┌─────────────────────┐
+        │     dotctl import   │
+        └─────────────────────┘
+```
+
+---
+
+## 📊 Profile Block Table
+
+| Section  | Field      | Description                                                       |
+| -------- | ---------- | ----------------------------------------------------------------- |
+| `save`   | `location` | Base path of the tracked files (can use key like `$CONFIG_DIR`)   |
+|          | `entries`  | List of files/folders to track under that location                |
+| `export` | `location` | Base path of export files (e.g., large assets not suited for Git) |
+|          | `entries`  | List of assets or binaries to package in `.dtsv`                  |
+
+---
+
+## 🔁 Example Workflow Table
+
+| Action          | Command                | Description                                                 |
+| --------------- | ---------------------- | ----------------------------------------------------------- |
+| Save configs    | `dotctl save`          | Pulls files defined in `save` and stores in repo            |
+| Export assets   | `dotctl export`        | Package large, non-Git assets into `.dtsv` file             |
+| Transfer assets | `scp profile.dtsv ...` | Manually copy to another machine                            |
+| Import assets   | `dotctl import`        | Unpack `.dtsv` on another system                            |
+| Apply profile   | `dotctl apply`         | Pull from repo, run pre/post hooks, and apply saved configs |
 
 ---
 
