@@ -419,19 +419,27 @@ dotctl sw MyProfile --fetch
 Create a new, empty profile.
 
 ```sh
-dotctl create [-h] [--fetch] <profile>
+usage: dotctl create [-h] [--fetch] [-c <path>] [-e <env>] profile
 ```
 
 **Examples:**
 
 ```sh
+# Create a new profile from current active profile.
 dotctl create myserver
-dotctl new myserver --fetch
+
+# Create a empty new profile from a specific environment.
+dotctl create -e kde
+
+# Create a empty new profile from a custom config.
+dotctl create -c ./my_custom_config.yaml
 ```
 
 **Options:**
 
 - `--fetch` – Sync with remote before creating.
+- `-c, --config` – Path to custom YAML config.
+- `-e, --env` – Target environment (e.g., kde, gnome, server).
 
 ---
 
@@ -463,7 +471,7 @@ dotctl del MyProfile -y
 Apply a saved profile.
 
 ```sh
-dotctl apply [-h] [-p <password>] [--skip-sudo] [--skip-hooks] [--skip-pre-hooks] [--skip-post-hooks] [--ignore-hook-errors] [profile]
+usage: dotctl apply [-h] [-p <password>] [--skip-sudo] [--skip-hooks] [--skip-pre-hooks] [--skip-post-hooks] [--ignore-hook-errors] [--hooks-timeout <timeout>] [profile]
 ```
 
 **Examples:**
@@ -471,6 +479,7 @@ dotctl apply [-h] [-p <password>] [--skip-sudo] [--skip-hooks] [--skip-pre-hooks
 ```sh
 dotctl apply
 dotctl apply mydesktop --skip-hooks
+dotctl apply mydesktop --hooks-timeout 10
 dotctl apply MyProfile --skip-pre-hooks --ignore-hook-errors
 ```
 
@@ -481,6 +490,7 @@ dotctl apply MyProfile --skip-pre-hooks --ignore-hook-errors
 - `--skip-pre-hooks` – Skip only pre-hooks.
 - `--skip-post-hooks` – Skip only post-hooks.
 - `--ignore-hook-errors` – Don’t abort if hooks fail.
+- `--hooks-timeout` – Timeout in seconds for hooks.
 - `-p, --password` – Password for restricted actions.
 
 ---
