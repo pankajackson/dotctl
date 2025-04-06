@@ -94,6 +94,7 @@ class DotCtl:
             "skip_pre_hooks",
             "skip_post_hooks",
             "ignore_hook_errors",
+            "hooks_timeout",
         )
         apply(props)
 
@@ -173,6 +174,7 @@ def main():
         "skip_pre_hooks": getattr(args, "skip_pre_hooks", False),
         "skip_post_hooks": getattr(args, "skip_post_hooks", False),
         "ignore_hook_errors": getattr(args, "ignore_hook_errors", False),
+        "hooks_timeout": getattr(args, "hooks_timeout", None),
         "password": getattr(args, "password", None),
         "details": getattr(args, "details", False),
         "fetch": getattr(args, "fetch", False),
