@@ -1,4 +1,10 @@
+import sys
 from dotctl import __APP_NAME__
+
+
+def new_line():
+    sys.stdout.write("\n")
+    sys.stdout.flush()
 
 
 def log(msg, *args, **kwargs):

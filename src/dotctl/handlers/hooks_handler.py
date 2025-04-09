@@ -3,7 +3,7 @@ import threading
 from pathlib import Path
 from dotctl import __BASE_DIR__
 from dotctl.paths import app_hooks_directory
-from dotctl.utils import log
+from dotctl.utils import log, new_line
 from .data_handler import copy
 
 
@@ -37,16 +37,23 @@ def run_shell_script(
         result = subprocess.run(
             cmd, check=not ignore_errors, timeout=timeout if timeout > 0 else None
         )
+
+        if result.returncode != 0:
+            new_line()
+            msg = f"❌ Script '{script_path}' exited with code {result.returncode}"
+            if not ignore_errors:
+                raise RuntimeError(msg)
+            log(msg)
         return result.returncode
     except subprocess.TimeoutExpired:
-        print("")
+        new_line()
         msg = f"❌ Script '{script_path}' timed out and was terminated."
         if not ignore_errors:
             raise RuntimeError(msg)
         log(msg)
         return -1
     except subprocess.CalledProcessError as e:
-        print("")
+        new_line()
         msg = f"❌ Script '{script_path}' exited with code {e.returncode}"
         if not ignore_errors:
             raise RuntimeError(msg)
