@@ -39,14 +39,18 @@ def run_shell_script(
         )
         return result.returncode
     except subprocess.TimeoutExpired:
+        print("")
         msg = f"❌ Script '{script_path}' timed out and was terminated."
         if not ignore_errors:
             raise RuntimeError(msg)
+        log(msg)
         return -1
     except subprocess.CalledProcessError as e:
+        print("")
         msg = f"❌ Script '{script_path}' exited with code {e.returncode}"
         if not ignore_errors:
             raise RuntimeError(msg)
+        log(msg)
         return e.returncode
 
 
@@ -60,21 +64,9 @@ def run_hooks(
     if pre_apply_hooks:
         log("Applying pre-apply hooks...")
         script_file = app_hooks_dir_path / "pre_apply.sh"
-        pre_e_code = run_shell_script(
-            script_file,
-            timeout=timeout,
-            # on_output=log,
-            ignore_errors=ignore_errors,
-        )
-        log(f"Exit code: {pre_e_code}")
+        run_shell_script(script_file, timeout=timeout, ignore_errors=ignore_errors)
 
     if post_apply_hooks:
         log("Applying post-apply hooks...")
         script_file = app_hooks_dir_path / "post_apply.sh"
-        post_e_code = run_shell_script(
-            script_file,
-            timeout=timeout,
-            # on_output=log,
-            ignore_errors=ignore_errors,
-        )
-        log(f"Exit code: {post_e_code}")
+        run_shell_script(script_file, timeout=timeout, ignore_errors=ignore_errors)
