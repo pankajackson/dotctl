@@ -36,6 +36,7 @@ Designed for developers and sysadmins, it supports pre/post hook scripts and is 
     - [🔥 `wipe`](#-wipe)
   - [🧑‍💻 Development \& Publishing](#-development--publishing)
     - [Setup Development Environment](#setup-development-environment)
+    - [Test the new code](#test-the-new-code)
     - [Build the Package](#build-the-package)
     - [Publish to TestPyPI](#publish-to-testpypi)
     - [Publish to PyPI](#publish-to-pypi)
@@ -571,6 +572,16 @@ source venv/bin/activate  # Linux/macOS
 venv\Scripts\activate     # Windows
 
 pip install -r requirements.txt
+```
+
+### Test the new code
+
+```sh
+cd src
+python -m dotctl.main --help
+python -m dotctl.main new my_profile
+python -m dotctl.main save
+python -m dotctl.main apply
 ```
 
 ### Build the Package
