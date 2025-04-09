@@ -225,7 +225,7 @@ def get_parser() -> argparse.ArgumentParser:
         type=int,
         help="Hook timeout in seconds",
         metavar="<timeout>",
-        default=60,
+        default=0,
     )
 
     # Export Parser

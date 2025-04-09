@@ -34,7 +34,7 @@ activator_default_props = ActivatorProps(
     skip_pre_hooks=False,
     skip_post_hooks=False,
     ignore_hook_errors=False,
-    hooks_timeout=60,
+    hooks_timeout=0,
 )
 
 
