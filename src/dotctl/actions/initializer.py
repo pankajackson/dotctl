@@ -66,16 +66,21 @@ def initialise(props: InitializerProps):
         raise Exception(f"Failed to initialize profile repo at {props.dest}. ")
     if props.profile:
         checkout_branch(repo, props.profile)
+        log(f"Switching to Profile `{props.profile}`.")
 
     if props.config is not None and isinstance(props.config, str):
         props.config = Path(props.config)
 
-    conf_initializer(
-        env=props.env,
-        custom_config=props.config,
-    )
-    hooks_initializer()
+    initialized_config = conf_initializer(env=props.env, custom_config=props.config)
+    if initialized_config is not None:
+        log(f"Config initialized successfully.")
+
+    initialized_hooks = hooks_initializer()
+    if initialized_hooks:
+        log(f"Hooks initialized successfully {initialized_hooks}.")
+
     add_changes(repo=repo)
+
     if is_repo_changed(repo=repo):
         hostname = socket.gethostname()
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -94,4 +99,4 @@ def initialise(props: InitializerProps):
             else:
                 push_existing_branch(repo=repo)
 
-    log("Profile initialized successfully.")
+    log("✅ Profile initialized successfully.")
