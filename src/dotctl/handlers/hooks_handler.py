@@ -7,10 +7,20 @@ from dotctl.utils import log, new_line
 from .data_handler import copy
 
 
-def hooks_initializer(app_hooks_dir_path: Path = Path(app_hooks_directory)):
+def hooks_initializer(
+    app_hooks_dir_path: Path = Path(app_hooks_directory),
+) -> list[Path]:
     app_hooks_dir_path.mkdir(parents=True, exist_ok=True)
     hooks_base_dir = Path(__BASE_DIR__) / "hooks"
-    copy(hooks_base_dir, app_hooks_dir_path)
+
+    initialized_hooks = []
+    for hook_file in hooks_base_dir.iterdir():
+        target_file = app_hooks_dir_path / hook_file.name
+        if not target_file.exists():
+            copy(hook_file, target_file)
+            initialized_hooks.append(hook_file.name)
+
+    return initialized_hooks
 
 
 def run_shell_script(

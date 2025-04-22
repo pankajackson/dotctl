@@ -91,10 +91,10 @@ def conf_initializer(
     env: str | None = None,
     custom_config: Path | None = None,
     app_config_file_path: Path = Path(app_config_file),
-) -> Path:
+) -> Path | None:
 
     if app_config_file_path.exists():
-        return app_config_file_path
+        return None
 
     if custom_config:
         log(f"Using custom config file: {custom_config}")
