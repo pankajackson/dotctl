@@ -274,6 +274,11 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip all sudo operations",
     )
+    # Pull Parser
+    pull_parser = subparsers.add_parser(
+        "pull", help="Pull the latest changes from the dotfiles repository"
+    )
+
     # Wipe Parser
     wipe_parser = subparsers.add_parser("wipe", help="Wipe Profiles")
 

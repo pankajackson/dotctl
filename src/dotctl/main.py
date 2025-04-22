@@ -9,6 +9,7 @@ from .actions.saver import save, saver_default_props
 from .actions.activator import apply, activator_default_props
 from .actions.lister import get_profile_list, lister_default_props
 from .actions.switcher import switch, switcher_default_props
+from .actions.puller import pull, puller_default_props
 from .actions.creator import create, creator_default_props
 from .actions.remover import remove, remover_default_props
 from .actions.exporter import exporter, exporter_default_props
@@ -22,6 +23,7 @@ class Action(Enum):
     LS = "ls"
     SWITCH = "switch"
     SW = "sw"
+    PULL = "pull"
     SAVE = "save"
     APPLY = "apply"
     CREATE = "create"
@@ -52,6 +54,7 @@ class DotCtl:
             Action.LS: self.list_profiles,
             Action.SWITCH: self.switch_profile,
             Action.SW: self.switch_profile,
+            Action.PULL: self.pull_profile,
             Action.CREATE: self.create_profile,
             Action.NEW: self.create_profile,
             Action.REMOVE: self.remove_profile,
@@ -140,6 +143,10 @@ class DotCtl:
         """Wipe dotfiles profile."""
         props = self._build_props(wiper_default_props, "no_confirm")
         wipe(props)
+
+    def pull_profile(self):
+        """Pull dotfiles profile."""
+        pull(puller_default_props)
 
 
 @exception_handler
