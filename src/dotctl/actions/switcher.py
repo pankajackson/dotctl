@@ -34,7 +34,7 @@ def switch(props: SwitcherProps):
     repo = get_repo(props.profile_dir)
 
     if repo.bare:
-        log("The repository is bare. No Profile available.")
+        log("❌ The repository is bare. No Profile available.")
         sys.exit(1)
 
     local_profiles, remote_profiles, active_profile, all_profiles = get_repo_branches(
@@ -52,7 +52,7 @@ def switch(props: SwitcherProps):
         )
 
     if profile_name == active_profile:
-        log(f"Already on the current profile: {profile_name}")
+        log(f"ℹ️ Already on the current profile: {profile_name}")
         return
 
     # Fetch remote branches if requested
@@ -64,10 +64,10 @@ def switch(props: SwitcherProps):
     if profile_name in local_profiles:
         # Checkout local branch
         checkout_branch(repo, profile_name)
-        log(f"Switched to profile: {profile_name}")
+        log(f"✅ Switched to profile: {profile_name}")
     elif profile_name in remote_profiles:
         # Checkout and track remote branch automatically
         checkout_branch(repo, profile_name)
-        log(f"Downloaded and switched to new profile from cloud: {profile_name}")
+        log(f"✅ Downloaded and switched to new profile from cloud: {profile_name}")
     else:
-        log(f"Profile '{profile_name}' is not available in the repository.")
+        log(f"❌ Profile '{profile_name}' is not available in the repository.")

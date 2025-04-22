@@ -67,7 +67,7 @@ def exporter(props: ExporterProps) -> None:
                 checkout_branch(repo, profile)
                 log(f"Switched to profile: {profile}")
             else:
-                log(f"Profile '{profile}' not found.")
+                log(f"❌ Profile '{profile}' not found.")
                 return
 
         # Copy profile files
@@ -117,7 +117,7 @@ def exporter(props: ExporterProps) -> None:
         shutil.move(archive_file, export_profile_path.with_suffix(__EXPORT_EXTENSION__))
 
         log(
-            f"Successfully exported to {export_profile_path.with_suffix(__EXPORT_EXTENSION__)}"
+            f"✅ Successfully exported to {export_profile_path.with_suffix(__EXPORT_EXTENSION__)}"
         )
     finally:
         shutil.rmtree(export_profile_path, ignore_errors=True)

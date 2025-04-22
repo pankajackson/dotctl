@@ -40,17 +40,17 @@ importer_default_props = ImporterProps(
 def importer(props: ImporterProps) -> None:
     log("Importing profile...")
     if not props.profile:
-        log("No profile specified")
+        log("❌ No profile specified")
         return
 
     profile_path = Path(props.profile)
 
     if not is_zipfile(profile_path):
-        log("Invalid Profile file")
+        log("❌ Invalid Profile file")
         return
 
     if profile_path.suffix != __EXPORT_EXTENSION__:
-        log("Unsupported Profile file")
+        log("❌ Unsupported Profile file")
         return
 
     # Setup variables
@@ -62,7 +62,7 @@ def importer(props: ImporterProps) -> None:
     # Create profile branch
     _, remote_profiles, active_profile, all_profiles = get_repo_branches(repo)
     if profile_name in all_profiles:
-        log(f"Profile '{profile_name}' already exists")
+        log(f"❌ Profile '{profile_name}' already exists")
         return
 
     create_branch(repo=repo, branch=profile_name)
@@ -127,7 +127,7 @@ def importer(props: ImporterProps) -> None:
         checkout_branch(repo, active_profile)
         log(f"Switched back to profile: {active_profile}")
 
-        log("Profile Imported successfully!")
+        log("✅ Profile Imported successfully!")
 
     finally:
         shutil.rmtree(temp_profile_dir, ignore_errors=True)

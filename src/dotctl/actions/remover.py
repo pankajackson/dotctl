@@ -39,7 +39,7 @@ def remove(props: RemoverProps):
 
     try:
         if repo.bare:
-            print("The repository is bare. No profiles available.")
+            print("❌ The repository is bare. No profiles available.")
             return
 
         if props.fetch:
@@ -54,16 +54,16 @@ def remove(props: RemoverProps):
         # Delete local branch if it exists
         if profile in local_profiles:
             delete_local_branch(repo, profile)
-            log(f"Local profile '{profile}' removed successfully.")
+            log(f"✅ Local profile '{profile}' removed successfully.")
         else:
-            log(f"Profile '{profile}' does not exist locally.")
+            log(f"❎ Profile '{profile}' does not exist locally.")
 
         # Delete remote branch if it exists
         if is_remote_repo(repo=repo):
             if profile in remote_profiles:
                 if props.no_confirm:
                     delete_remote_branch(repo, profile)
-                    log(f"Remote profile '{profile}' removed successfully.")
+                    log(f"✅ Remote profile '{profile}' removed successfully.")
                     return
                 else:
                     # Ask for confirmation
@@ -72,13 +72,13 @@ def remove(props: RemoverProps):
                     )
                     if confirm.lower() == "y":
                         delete_remote_branch(repo, profile)
-                        log(f"Remote profile '{profile}' removed successfully.")
+                        log(f"✅ Remote profile '{profile}' removed successfully.")
                         return
                     else:
-                        log("Remote profile deletion aborted by user.")
+                        log("🛑 Remote profile deletion aborted by user.")
                         return
 
-        log(f"Profile '{profile}' does not exist on cloud.")
+        log(f"❎ Profile '{profile}' does not exist on cloud.")
 
     except Exception as e:
         raise Exception(f"Unexpected error: {e}")
