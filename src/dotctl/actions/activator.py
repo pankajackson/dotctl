@@ -54,13 +54,13 @@ def apply(props: ActivatorProps) -> None:
             checkout_branch(repo, profile)
             log(f"Switched to profile: {profile}")
         else:
-            log(f"Profile {profile} is not available.")
+            log(f"❌ Profile {profile} is not available.")
             return
 
     config = conf_reader(config_file=Path(app_config_file))
 
     if pull_changes(repo):
-        log("✅ Pulled latest changes from cloud successfully.")
+        log("Pulled latest changes from cloud successfully.")
 
     if not props.skip_hooks and not props.skip_pre_hooks:
         run_hooks(
@@ -95,4 +95,4 @@ def apply(props: ActivatorProps) -> None:
             ignore_errors=props.ignore_hook_errors,
             timeout=props.hooks_timeout,
         )
-    log("✅ Profile saved successfully!")
+    log("✅ Profile applied successfully!")

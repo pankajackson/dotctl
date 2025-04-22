@@ -56,7 +56,7 @@ def save(props: SaverProps) -> None:
             create_branch(repo=repo, branch=profile)
             log(f"Profile '{profile}' created and activated successfully.")
     if pull_changes(repo):
-        log("✅ Pulled latest changes from cloud successfully.")
+        log("Pulled latest changes from cloud successfully.")
 
     config = conf_reader(config_file=Path(app_config_file))
 
@@ -97,4 +97,4 @@ def save(props: SaverProps) -> None:
                 push_existing_branch(repo=repo)
         log("✅ Profile saved successfully!")
     else:
-        log("No changes detected!")
+        log("ℹ️ No changes detected!")
