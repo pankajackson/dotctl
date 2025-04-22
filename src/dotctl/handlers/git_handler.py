@@ -226,13 +226,11 @@ def push_new_branch(repo: Repo) -> None:
         )
 
 
-def pull_changes(repo: Repo) -> None | bool:
+def pull_changes(repo: Repo) -> bool | None:
     is_remote, origin = is_remote_repo(repo)
     if not is_remote or origin is None:
-        log(
-            "Warning: Skipping pull from remote repository. This is not a remote repository."
-        )
-        return
+        log("Warning: Skipping pull. This is not a remote repository.")
+        return None
 
     if repo.bare:
         raise Exception("Error: The repository is bare. Cannot pull changes.")
@@ -249,6 +247,7 @@ def pull_changes(repo: Repo) -> None | bool:
     log("📥 Update found:")
     for commit in repo.iter_commits(f"{current_branch}..origin/{current_branch}"):
         log(f" - {commit.summary} ({commit.hexsha[:7]})")
+
     origin.pull()
     return True
 

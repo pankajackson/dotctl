@@ -10,6 +10,7 @@ from dotctl.handlers.git_handler import (
     get_repo_branches,
     git_fetch,
     checkout_branch,
+    pull_changes,
 )
 from dotctl.exception import exception_handler
 
@@ -57,6 +58,10 @@ def apply(props: ActivatorProps) -> None:
             return
 
     config = conf_reader(config_file=Path(app_config_file))
+
+    if pull_changes(repo):
+        log("✅ Pulled latest changes from cloud successfully.")
+
     if not props.skip_hooks and not props.skip_pre_hooks:
         run_hooks(
             pre_apply_hooks=True,
@@ -90,4 +95,4 @@ def apply(props: ActivatorProps) -> None:
             ignore_errors=props.ignore_hook_errors,
             timeout=props.hooks_timeout,
         )
-    log("Profile saved successfully!")
+    log("✅ Profile saved successfully!")
