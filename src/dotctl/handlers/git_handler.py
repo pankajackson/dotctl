@@ -226,6 +226,32 @@ def push_new_branch(repo: Repo) -> None:
         )
 
 
+def pull_changes(repo: Repo) -> bool | None:
+    is_remote, origin = is_remote_repo(repo)
+    if not is_remote or origin is None:
+        log("Warning: Skipping pull. This is not a remote repository.")
+        return None
+
+    if repo.bare:
+        raise Exception("Error: The repository is bare. Cannot pull changes.")
+
+    git_fetch(repo)
+
+    current_branch = repo.active_branch.name
+    local_commit = repo.commit(current_branch)
+    remote_commit = repo.commit(f"origin/{current_branch}")
+
+    if local_commit.hexsha == remote_commit.hexsha:
+        return None
+
+    log("📥 Update found:")
+    for commit in repo.iter_commits(f"{current_branch}..origin/{current_branch}"):
+        log(f" - {commit.summary} ({commit.hexsha[:7]})")
+
+    origin.pull()
+    return True
+
+
 def get_repo_meta(repo: Repo) -> RepoMetaData:
 
     if repo.bare:
