@@ -29,7 +29,7 @@ def wipe(props: WiperProps):
     try:
         if props.no_confirm:
             shutil.rmtree(props.profile_dir)
-            log(f"Profile directory '{props.profile_dir}' removed successfully.")
+            log(f"🗑️ Profile directory '{props.profile_dir}' removed successfully.")
             return
         else:
             # Ask for confirmation
@@ -42,12 +42,12 @@ def wipe(props: WiperProps):
                     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                     backup_dir = f"{props.profile_dir}_backup_{timestamp}"
                     shutil.copytree(props.profile_dir, backup_dir)
-                    log(f"Backup directory '{backup_dir}' created successfully.")
+                    log(f"💾 Backup directory '{backup_dir}' created successfully.")
                 shutil.rmtree(props.profile_dir)
-                log(f"Profile directory '{props.profile_dir}' removed successfully.")
+                log(f"🗑️  Profile directory '{props.profile_dir}' removed successfully.")
                 return
             else:
-                log("Profile wipe process aborted by user.")
+                log("🛑 Profile wipe process aborted by user.")
                 return
     except Exception as e:
         raise Exception(f"Unexpected error: {e}")

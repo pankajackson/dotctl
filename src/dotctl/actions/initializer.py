@@ -47,7 +47,7 @@ def initialise(props: InitializerProps):
     log("Initializing...")
 
     if is_git_repo(props.dest):
-        log("Repository already initialized.")
+        log("❌ Repository already initialized.")
         return
 
     if props.git_url:

@@ -26,7 +26,7 @@ def pull(props: PullerProps):
     try:
         changes = pull_changes(repo)
         if changes is None:
-            log("✅ Profile already up to date.")
+            log("ℹ️ Profile already up to date.")
         elif changes:
             log("✅ Pulled latest changes successfully.")
 

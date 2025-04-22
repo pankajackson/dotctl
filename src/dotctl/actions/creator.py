@@ -53,7 +53,7 @@ def create(props: CreatorProps):
 
     _, _, _, all_profiles = get_repo_branches(repo)
     if props.profile in all_profiles:
-        log(f"Profile '{props.profile}' already exists.")
+        log(f"❌ Profile '{props.profile}' already exists.")
         return
     if props.env or props.config:
         if props.config is not None and isinstance(props.config, str):
@@ -86,4 +86,4 @@ def create(props: CreatorProps):
             else:
                 push_existing_branch(repo=repo)
 
-    log(f"Profile '{props.profile}' created and activated successfully.")
+    log(f"✅ Profile '{props.profile}' created and activated successfully.")
