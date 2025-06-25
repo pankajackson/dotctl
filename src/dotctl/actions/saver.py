@@ -87,7 +87,6 @@ def save(props: SaverProps) -> None:
         if p.is_dir() and p.name not in [".git", "hooks"]
         # and p.name not in config.save.keys()
     ]
-    log(str(dot_list))
     for dot in dot_list:
         if dot.name not in config.save.keys():
             log(f'Removing "{dot.name}"...')
@@ -107,7 +106,7 @@ def save(props: SaverProps) -> None:
             entry_list = dot.iterdir()
             for entry in entry_list:
                 if entry.name not in config.save[dot.name].entries:
-                    log(f'Removing "{dot.name}: {entry.name}"...')
+                    log(f'Removing "{dot.name}:{entry.name}"...')
                     result = delete(
                         path=profile_dir / dot.name / entry.name,
                         skip_sudo=props.skip_sudo,
