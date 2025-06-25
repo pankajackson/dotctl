@@ -82,7 +82,7 @@ class DotCtl:
     def save_dots(self):
         """Save current dotfiles."""
         props = self._build_props(
-            saver_default_props, "skip_sudo", "password", "profile"
+            saver_default_props, "skip_sudo", "password", "profile", "prune"
         )
         save(props)
 
@@ -186,6 +186,7 @@ def main():
         "details": getattr(args, "details", False),
         "fetch": getattr(args, "fetch", False),
         "no_confirm": getattr(args, "no_confirm", False),
+        "prune": getattr(args, "prune", False),
     }
 
     dot_ctl_obj = DotCtl(**common_args)
