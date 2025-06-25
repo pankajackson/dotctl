@@ -80,7 +80,7 @@ def get_parser() -> argparse.ArgumentParser:
         "profile",
         nargs="?",  # Makes positional argument optional
         type=str,
-        help="Profile to save to",
+        help="Target profile to save into (defaults to the active one if not provided)",
         default=None,
     )
 

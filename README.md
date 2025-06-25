@@ -31,6 +31,7 @@ Designed for developers and sysadmins, it supports pre/post hook scripts and is 
     - [🆕 `create` / `new`](#-create--new)
     - [❌ `remove` / `rm` / `delete` / `del`](#-remove--rm--delete--del)
     - [🧪 `apply`](#-apply)
+    - [🔄 `pull`](#-pull)
     - [📤 `export`](#-export)
     - [📥 `import`](#-import)
     - [🔥 `wipe`](#-wipe)
@@ -51,6 +52,7 @@ Designed for developers and sysadmins, it supports pre/post hook scripts and is 
 - 🔄 **Git Integration** — Sync profiles with local or remote Git repositories.
 - 📁 **Portable Configs** — Export/import profiles using `.dtsv` files for easy backups and sharing.
 - ⚙️ **Custom Configs** — Define tracking rules via `dotctl.yaml`.
+- 🧹 **Prune Support** — Clean stale files no longer listed in your profile with --prune.
 
 ---
 
@@ -355,7 +357,7 @@ dotctl init -c ./my_custom_config.yaml
 Save current system state to the active profile.
 
 ```sh
-dotctl save [-h] [-p <password>] [--skip-sudo] [profile]
+dotctl save [-h] [-p <password>] [--skip-sudo] [--prune] [profile]
 ```
 
 **Examples:**
@@ -364,12 +366,17 @@ dotctl save [-h] [-p <password>] [--skip-sudo] [profile]
 dotctl save
 dotctl save my_web_server --skip-sudo
 dotctl save my_web_server -p mYsecretp@ssw0rd
+dotctl save --prune
 ```
+
+> Tip: Use --prune to clean files that were saved before but are no longer listed in the config.
 
 **Options:**
 
 - `--skip-sudo` – Ignore restricted resources.
 - `-p, --password` – Password for restricted resources.
+- `--prune` – Remove stale files from the dot repo that are no longer listed in the current `dotctl.yaml` config.
+- `profile` – Target profile to save into (defaults to the active one if not provided)
 
 ---
 
@@ -495,6 +502,22 @@ dotctl apply MyProfile --skip-pre-hooks --ignore-hook-errors
 - `--ignore-hook-errors` – Don’t abort if hooks fail.
 - `--hooks-timeout` – Timeout in seconds for hooks.
 - `-p, --password` – Password for restricted actions.
+
+---
+
+### 🔄 `pull`
+
+Pull the latest changes from the dotfiles repository.
+
+```sh
+dotctl pull [-h]
+```
+
+**Examples:**
+
+```sh
+dotctl pull
+```
 
 ---
 
