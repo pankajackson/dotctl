@@ -28,12 +28,14 @@ class SaverProps:
     skip_sudo: bool
     password: str | None
     profile: str | None
+    prune: bool
 
 
 saver_default_props = SaverProps(
     skip_sudo=False,
     password=None,
     profile=None,
+    prune=False,
 )
 
 
@@ -69,7 +71,11 @@ def save(props: SaverProps) -> None:
             source = source_base_dir / entry
             dest = dest_base_dir / entry
             result = copy(
-                source, dest, skip_sudo=props.skip_sudo, sudo_pass=props.password
+                source,
+                dest,
+                skip_sudo=props.skip_sudo,
+                sudo_pass=props.password,
+                prune=props.prune,
             )
 
             # Updated props
@@ -81,44 +87,44 @@ def save(props: SaverProps) -> None:
                     props.password = sudo_pass
 
     # Dots Config Cleanup
-    dot_list = [
-        p
-        for p in profile_dir.iterdir()
-        if p.is_dir() and p.name not in [".git", "hooks"]
-        # and p.name not in config.save.keys()
-    ]
-    for dot in dot_list:
-        if dot.name not in config.save.keys():
-            log(f'Removing "{dot.name}"...')
-            result = delete(
-                path=profile_dir / dot.name,
-                skip_sudo=props.skip_sudo,
-                sudo_pass=props.password,
-            )
-            # Updated props
-            if result is not None:
-                skip_sudo, sudo_pass = result
-                if skip_sudo is not None:
-                    props.skip_sudo = skip_sudo
-                if sudo_pass is not None:
-                    props.password = sudo_pass
-        else:
-            entry_list = dot.iterdir()
-            for entry in entry_list:
-                if entry.name not in config.save[dot.name].entries:
-                    log(f'Removing "{dot.name}:{entry.name}"...')
-                    result = delete(
-                        path=profile_dir / dot.name / entry.name,
-                        skip_sudo=props.skip_sudo,
-                        sudo_pass=props.password,
-                    )
-                    # Updated props
-                    if result is not None:
-                        skip_sudo, sudo_pass = result
-                        if skip_sudo is not None:
-                            props.skip_sudo = skip_sudo
-                        if sudo_pass is not None:
-                            props.password = sudo_pass
+    if props.prune:
+        dot_list = [
+            p
+            for p in profile_dir.iterdir()
+            if p.is_dir() and p.name not in [".git", "hooks"]
+        ]
+        for dot in dot_list:
+            if dot.name not in config.save.keys():
+                log(f'Removing "{dot.name}"...')
+                result = delete(
+                    path=profile_dir / dot.name,
+                    skip_sudo=props.skip_sudo,
+                    sudo_pass=props.password,
+                )
+                # Updated props
+                if result is not None:
+                    skip_sudo, sudo_pass = result
+                    if skip_sudo is not None:
+                        props.skip_sudo = skip_sudo
+                    if sudo_pass is not None:
+                        props.password = sudo_pass
+            else:
+                entry_list = dot.iterdir()
+                for entry in entry_list:
+                    if entry.name not in config.save[dot.name].entries:
+                        log(f'Removing "{dot.name}:{entry.name}"...')
+                        result = delete(
+                            path=profile_dir / dot.name / entry.name,
+                            skip_sudo=props.skip_sudo,
+                            sudo_pass=props.password,
+                        )
+                        # Updated props
+                        if result is not None:
+                            skip_sudo, sudo_pass = result
+                            if skip_sudo is not None:
+                                props.skip_sudo = skip_sudo
+                            if sudo_pass is not None:
+                                props.password = sudo_pass
 
     add_changes(repo=repo)
     if is_repo_changed(repo=repo):

@@ -71,6 +71,12 @@ def get_parser() -> argparse.ArgumentParser:
         help="Skip all sudo operations",
     )
     save_parser.add_argument(
+        "--prune",
+        required=False,
+        action="store_true",
+        help="Prune all previously saved data not present in the current profile",
+    )
+    save_parser.add_argument(
         "profile",
         nargs="?",  # Makes positional argument optional
         type=str,

@@ -160,7 +160,7 @@ def delete(path: Path, skip_sudo=False, sudo_pass: str | None = None):
 
 
 @exception_handler
-def copy(source: Path, dest: Path, skip_sudo=False, sudo_pass=None):
+def copy(source: Path, dest: Path, skip_sudo=False, sudo_pass=None, prune=False):
     """Copies files/directories using rsync and handles sudo permission issues."""
     temp_pass = None
     source_exists = False
@@ -191,6 +191,8 @@ def copy(source: Path, dest: Path, skip_sudo=False, sudo_pass=None):
                 if temp_pass or sudo_pass:
                     rsync(source, dest, temp_pass or sudo_pass, is_dir=is_dir)
     else:
-        delete(dest, skip_sudo, temp_pass or sudo_pass)
+        if prune:
+            log(f'Removing "{dest.parent.name}:{dest.name}"...')
+            delete(dest, skip_sudo, temp_pass or sudo_pass)
 
     return skip_sudo, sudo_pass
