@@ -3,7 +3,7 @@ import socket
 from datetime import datetime
 from pathlib import Path
 from dotctl.utils import log
-from dotctl.handlers.data_handler import copy
+from dotctl.handlers.data_handler import copy, delete
 from dotctl.paths import app_profile_directory, app_config_file
 from dotctl.handlers.config_handler import conf_reader
 from dotctl.handlers.git_handler import (
@@ -72,6 +72,29 @@ def save(props: SaverProps) -> None:
                 source, dest, skip_sudo=props.skip_sudo, sudo_pass=props.password
             )
 
+            # Updated props
+            if result is not None:
+                skip_sudo, sudo_pass = result
+                if skip_sudo is not None:
+                    props.skip_sudo = skip_sudo
+                if sudo_pass is not None:
+                    props.password = sudo_pass
+
+    dot_list = [
+        p
+        for p in profile_dir.iterdir()
+        if p.is_dir() and p.name not in [".git", "hooks"]
+        # and p.name not in config.save.keys()
+    ]
+    log(str(dot_list))
+    for dot in dot_list:
+        if dot.name not in config.save.keys():
+            log(f'Removing "{dot.name}"...')
+            result = delete(
+                path=profile_dir / dot.name,
+                skip_sudo=props.skip_sudo,
+                sudo_pass=props.password,
+            )
             # Updated props
             if result is not None:
                 skip_sudo, sudo_pass = result

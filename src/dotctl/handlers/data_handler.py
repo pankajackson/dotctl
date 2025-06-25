@@ -149,7 +149,6 @@ def delete(path: Path, skip_sudo=False, sudo_pass: str | None = None):
             path_exists = success
 
     if path_exists:
-        log(f"Removing {path}...")
         try:
             remove_file_or_dir(path, temp_pass or sudo_pass)
         except PermissionError:
