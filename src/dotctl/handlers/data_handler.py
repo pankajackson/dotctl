@@ -49,6 +49,35 @@ def rsync(
     return stdout.strip()
 
 
+def remove_file_or_dir(
+    location: Path,
+    sudo_pass: str | None = None,
+):
+    command = ["rm", "-rf", str(location)]
+    if sudo_pass:
+        command = ["sshpass", "-p", sudo_pass, "sudo"] + command
+
+    process = subprocess.Popen(
+        command,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    stdout, stderr = process.communicate()
+
+    if process.returncode != 0:
+        log(f"cleanup failed: {stderr.strip()}")
+
+        if "Permission denied" in stderr or process.returncode == 13:
+            raise PermissionError(stdout.strip() or stderr.strip())
+
+        raise subprocess.CalledProcessError(process.returncode, command, stderr)
+
+    return stdout.strip()
+
+
 def get_sudo_pass(path: Path, sudo_max_attempts: int = 3):
     """Prompt for sudo password and handle user choices."""
     log(f"Required sudo to process {path}")
@@ -104,6 +133,33 @@ def run_command(command: str, sudo_pass: str | None = None):
         return False, e.stderr.strip() if e.stderr else "", e.returncode  # Failure
 
 
+def delete(path: Path, skip_sudo=False, sudo_pass: str | None = None):
+    temp_pass = None
+    path_exists = False
+    try:
+        path_exists = path.exists()
+    except PermissionError:
+        if skip_sudo:
+            log(f"PermissionError: skipping {path}")
+            return skip_sudo, sudo_pass
+        else:
+            if not temp_pass and not sudo_pass:
+                temp_pass, sudo_pass, skip_sudo = get_sudo_pass(path)
+            success, _, _ = run_command(f"ls {path}", temp_pass or sudo_pass)
+            path_exists = success
+
+    if path_exists:
+        log(f"Removing {path}...")
+        try:
+            remove_file_or_dir(path, temp_pass or sudo_pass)
+        except PermissionError:
+            log(f"PermissionError: {path} requires sudo access.")
+            if not skip_sudo:
+                temp_pass, sudo_pass, skip_sudo = get_sudo_pass(path)
+                if temp_pass or sudo_pass:
+                    remove_file_or_dir(path, temp_pass or sudo_pass)
+
+
 @exception_handler
 def copy(source: Path, dest: Path, skip_sudo=False, sudo_pass=None):
     """Copies files/directories using rsync and handles sudo permission issues."""
@@ -112,31 +168,30 @@ def copy(source: Path, dest: Path, skip_sudo=False, sudo_pass=None):
     is_dir = False  # Default to file
 
     try:
+        source_exists = source.exists()
+        is_dir = source.is_dir()
+    except PermissionError:
+        if skip_sudo:
+            log(f"PermissionError: skipping {source}")
+            return skip_sudo, sudo_pass
+        else:
+            if not temp_pass and not sudo_pass:
+                temp_pass, sudo_pass, skip_sudo = get_sudo_pass(source)
+            success, _, _ = run_command(f"ls {source}", temp_pass or sudo_pass)
+            source_exists = success
+            _, _, exit_code = run_command(f"test -d {source}", temp_pass or sudo_pass)
+            is_dir = exit_code == 0
+    if source_exists:
         try:
-            source_exists = source.exists()
-            is_dir = source.is_dir()
-        except PermissionError:
-            if skip_sudo:
-                log(f"PermissionError: skipping {source}")
-                return skip_sudo, sudo_pass
-            else:
-                if not temp_pass and not sudo_pass:
-                    temp_pass, sudo_pass, skip_sudo = get_sudo_pass(source)
-                success, _, _ = run_command(f"ls {source}", temp_pass or sudo_pass)
-                source_exists = success
-                _, _, exit_code = run_command(
-                    f"test -d {source}", temp_pass or sudo_pass
-                )
-                is_dir = exit_code == 0
-
-        if source_exists:
             assert source != dest, "Source and destination can't be the same"
             rsync(source, dest, temp_pass or sudo_pass, is_dir=is_dir)
-    except PermissionError:
-        log(f"PermissionError: {source} requires sudo access.")
-        if not skip_sudo:
-            temp_pass, sudo_pass, skip_sudo = get_sudo_pass(source)
-            if temp_pass or sudo_pass:
-                rsync(source, dest, temp_pass or sudo_pass, is_dir=is_dir)
+        except PermissionError:
+            log(f"PermissionError: {source} requires sudo access.")
+            if not skip_sudo:
+                temp_pass, sudo_pass, skip_sudo = get_sudo_pass(source)
+                if temp_pass or sudo_pass:
+                    rsync(source, dest, temp_pass or sudo_pass, is_dir=is_dir)
+    else:
+        delete(dest, skip_sudo, temp_pass or sudo_pass)
 
     return skip_sudo, sudo_pass
