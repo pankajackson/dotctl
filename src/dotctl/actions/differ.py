@@ -31,6 +31,7 @@ differ_default_props = DiffProps(
 
 
 def diff(props: DiffProps) -> None:
+    log("Fetching diffs...")
     repo = get_repo(props.profile_dir)
 
     if repo.bare:
@@ -64,7 +65,7 @@ def diff(props: DiffProps) -> None:
             if diff_lines:
                 changes_found = True
 
-                log(f"\n🔍 Diff: {name}/{entry}")
+                print(f"\n🔍 Diff: {name}/{entry}")
                 if props.side_by_side:
                     render_side_by_side(source, repo_file)
 

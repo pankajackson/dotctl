@@ -400,6 +400,8 @@ def status(props: StatusProps) -> None:
     if props.json:
         render_json(report)
     elif props.short:
+        log("Fetching status...")
         render_short(report)
     else:
+        log("Fetching status...")
         render_full(report)
