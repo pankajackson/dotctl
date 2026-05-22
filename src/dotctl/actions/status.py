@@ -1,21 +1,65 @@
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import json
 
 from dotctl.paths import app_profile_directory, app_config_file
-from dotctl.handlers.config_handler import conf_reader
+from dotctl.handlers.config_handler import conf_reader, Config
 from dotctl.handlers.git_handler import get_repo, is_git_repo
-from dotctl.handlers.profile_handler import DriftReport, build_drift_report
+from dotctl.handlers.status_handler import (
+    DriftReport,
+    StatusCode,
+    Severity,
+    status_icon,
+    build_drift_report,
+)
 from dotctl.utils import log
 
 
 @dataclass
+class HealthStatus:
+    healthy: bool
+    code: StatusCode
+    severity: Severity
+    message: str
+    errors: list[str] = field(default_factory=list)
+
+    def has_errors(self) -> bool:
+        return len(self.errors) > 0
+
+
+@dataclass
+class ProfileInfo:
+    profile_dir: Path
+    active_profile: str | None
+    remote_url: str | None
+    is_remote: bool
+    health: HealthStatus
+
+    def has_remote(self) -> bool:
+        return self.is_remote and self.remote_url is not None
+
+
+@dataclass
+class ConfigInfo:
+    config_path: Path
+    health: HealthStatus
+
+
+@dataclass
 class StatusReport:
-    repo_status: str
-    config_status: str
+    profile: ProfileInfo
+    config: ConfigInfo
     drift: DriftReport | None
-    errors: list[str]
+    # symlink: CheckResult
+    # permissions: CheckResult
+    # hooks: CheckResult
+
+    def is_healthy(self) -> bool:
+        return self.profile.health.healthy and self.config.health.healthy
+
+    def can_analyze_drift(self) -> bool:
+        return self.drift is not None
 
 
 @dataclass
@@ -34,23 +78,36 @@ status_default_props = StatusProps(
 
 def render_full(report: StatusReport):
 
-    print(f"Repository: {report.repo_status}")
-    print(f"Config: {report.config_status}")
+    profile = report.profile
+    config = report.config
 
-    if report.errors:
-        print("\nErrors:")
-        for error in report.errors:
-            print(f"  - {error}")
+    print(f"{status_icon(profile.health.healthy)} " f"profile: {profile.health.message}")
 
-    if report.drift is None:
+    print(f"{status_icon(config.health.healthy)} " f"config: {config.health.message}")
+
+    if profile.active_profile:
+        print(f"✔ active profile: {profile.active_profile}")
+
+    if profile.has_remote():
+        print(f"✔ remote: {profile.remote_url}")
+
+    if not report.can_analyze_drift():
         print("\n⚠ drift analysis unavailable")
         return
 
     drift = report.drift
 
-    system_in_sync = drift.is_clean()
+    print()
 
-    print("\n✔ system: in sync" if system_in_sync else "\n⚠ system: drift detected")
+    if drift is None:
+        return
+
+    if drift.is_clean():
+        print("✔ system: in sync")
+    else:
+        print("⚠ system: drift detected")
+
+    print(f"✔ synced files: {len(drift.synced_files)}")
 
     if drift.modified_files:
         print(f"⚠ modified files: {len(drift.modified_files)}")
@@ -62,39 +119,67 @@ def render_full(report: StatusReport):
     else:
         print("✔ missing files: none")
 
-    print("✔ symlink health: OK")  # placeholder
+    changed = drift.modified_files + drift.missing_files
 
-    if drift.modified_files or drift.missing_files:
+    if changed:
+
+        grouped = Counter(f.state.value for f in changed)
 
         print("\nChanged files:")
 
-        for f in drift.modified_files + drift.missing_files:
+        for f in changed:
             print(f"  - {f.path}")
+
+        print()
+
+        for state, count in grouped.items():
+            print(f"  {state}: {count}")
 
 
 def render_short(report: StatusReport):
 
-    if report.config_status != "ok":
-        print(f"Config: {report.config_status}")
-        return
-    if report.repo_status != "ok":
-        print(f"Repository: {report.repo_status}")
+    profile = report.profile
+    config = report.config
+
+    if not profile.health.healthy:
+        print(f"profile: {profile.health.message}")
         return
 
-    if report.drift is None:
-        print("drift status: unavailable")
+    if not config.health.healthy:
+        print(f"config: {config.health.message}")
+        return
+
+    if not report.can_analyze_drift():
+        print("drift: unavailable")
         return
 
     drift = report.drift
 
-    if not report.drift.is_clean:
-        print("Status Summary:")
-        print(f"- modified: {len(drift.modified_files)}")
-        print(f"- missing: {len(drift.missing_files)}")
-        print(f"- synced: {len(drift.synced_files)}")
+    if drift is None:
+        print("drift: unavailable")
+        return
+
+    if drift.is_clean():
+        print("✔ clean")
+        return
+
+    print(
+        f"modified={len(drift.modified_files)} "
+        f"missing={len(drift.missing_files)} "
+        f"synced={len(drift.synced_files)}"
+    )
 
 
 def render_json(report: StatusReport):
+
+    def encode_health(health: HealthStatus):
+        return {
+            "healthy": health.healthy,
+            "code": health.code.value,
+            "severity": health.severity.value,
+            "message": health.message,
+            "errors": health.errors,
+        }
 
     def encode_file(f):
         return {
@@ -104,16 +189,24 @@ def render_json(report: StatusReport):
             "state": f.state.value,
         }
 
-    drift = report.drift
-
     output = {
-        "repo_status": report.repo_status,
-        "config_status": report.config_status,
-        "errors": report.errors,
+        "profile": {
+            "profile_dir": str(report.profile.profile_dir),
+            "active_profile": report.profile.active_profile,
+            "remote_url": report.profile.remote_url,
+            "is_remote": report.profile.is_remote,
+            "health": encode_health(report.profile.health),
+        },
+        "config": {
+            "config_path": str(report.config.config_path),
+            "health": encode_health(report.config.health),
+        },
         "drift": None,
     }
 
-    if drift is not None:
+    if report.drift:
+
+        drift = report.drift
 
         output["drift"] = {
             "clean": drift.is_clean(),
@@ -126,67 +219,171 @@ def render_json(report: StatusReport):
     print(json.dumps(output, indent=2))
 
 
-def status(props: StatusProps) -> None:
+def collect_profile_info(profile_dir: Path, errors: list[str]) -> ProfileInfo:
+    health = HealthStatus(
+        healthy=True,
+        code=StatusCode.OK,
+        severity=Severity.INFO,
+        message="ok",
+    )
 
-    errors = []
+    active_profile = None
+    remote_url = None
+    is_remote = False
 
-    repo_status = "ok"
-    config_status = "ok"
-
-    config = None
-    drift_report = None
-
-    # Repository checks
     try:
 
-        if not props.profile_dir.exists():
-            repo_status = "not found"
+        if not profile_dir.exists():
+            health = HealthStatus(
+                healthy=False,
+                code=StatusCode.REPO_NOT_FOUND,
+                severity=Severity.ERROR,
+                message="profile directory not found",
+            )
 
-        elif not props.profile_dir.is_dir():
-            repo_status = "invalid directory"
+        elif not profile_dir.is_dir():
+            health = HealthStatus(
+                healthy=False,
+                code=StatusCode.REPO_INVALID_DIRECTORY,
+                severity=Severity.ERROR,
+                message="invalid profile directory",
+            )
 
-        elif not is_git_repo(props.profile_dir):
-            repo_status = "not a git repository"
+        elif not is_git_repo(profile_dir):
+            health = HealthStatus(
+                healthy=False,
+                code=StatusCode.REPO_NOT_GIT,
+                severity=Severity.ERROR,
+                message="not a git repository",
+            )
 
         else:
 
-            repo = get_repo(props.profile_dir)
+            repo = get_repo(profile_dir)
 
             if repo.bare:
-                repo_status = "bare repository"
+                health = HealthStatus(
+                    healthy=False,
+                    code=StatusCode.REPO_BARE,
+                    severity=Severity.ERROR,
+                    message="bare repository",
+                )
+
+            else:
+                try:
+                    active_profile = repo.active_branch.name
+                except Exception:
+                    active_profile = None
+
+                try:
+                    if repo.remotes:
+                        origin = next(
+                            (r for r in repo.remotes if r.name == "origin"),
+                            None,
+                        )
+                        if origin:
+                            remote_url = origin.url
+                            is_remote = True
+                except Exception as e:
+                    errors.append(f"remote inspection failed: {e}")
 
     except Exception as e:
 
-        repo_status = "error"
-        errors.append(f"Repository check failed: {e}")
+        health = HealthStatus(
+            healthy=False,
+            code=StatusCode.ERROR,
+            severity=Severity.ERROR,
+            message="profile check failed",
+            errors=[str(e)],
+        )
 
-    # Config checks
+        errors.append(f"Profile check failed: {e}")
+
+    return ProfileInfo(
+        profile_dir=profile_dir,
+        active_profile=active_profile,
+        remote_url=remote_url,
+        is_remote=is_remote,
+        health=health,
+    )
+
+
+def collect_config_info(errors: list[str]) -> tuple[ConfigInfo, Config | None]:
+
+    config_path = Path(app_config_file)
+
+    health = HealthStatus(
+        healthy=True,
+        code=StatusCode.OK,
+        severity=Severity.INFO,
+        message="ok",
+    )
+
+    config = None
+
     try:
 
-        config_path = Path(app_config_file)
-
         if not config_path.exists():
-            config_status = "not found"
+            health = HealthStatus(
+                healthy=False,
+                code=StatusCode.CONFIG_NOT_FOUND,
+                severity=Severity.ERROR,
+                message="config file not found",
+            )
 
         elif not config_path.is_file():
-            config_status = "invalid file"
+            health = HealthStatus(
+                healthy=False,
+                code=StatusCode.CONFIG_INVALID_FILE,
+                severity=Severity.ERROR,
+                message="invalid config file",
+            )
 
         else:
 
             config = conf_reader(config_file=config_path)
 
             if not config:
-                config_status = "invalid config"
+                health = HealthStatus(
+                    healthy=False,
+                    code=StatusCode.CONFIG_UNSUPPORTED,
+                    severity=Severity.ERROR,
+                    message="invalid config format",
+                )
 
     except Exception as e:
 
-        config_status = "error"
+        health = HealthStatus(
+            healthy=False,
+            code=StatusCode.CONFIG_PARSE_FAILED,
+            severity=Severity.ERROR,
+            message="config parsing failed",
+            errors=[str(e)],
+        )
+
         errors.append(f"Config check failed: {e}")
 
-    # Drift checks
-    try:
+    return (
+        ConfigInfo(
+            config_path=config_path,
+            health=health,
+        ),
+        config,
+    )
 
-        if repo_status == "ok" and config_status == "ok" and config:
+
+def status(props: StatusProps) -> None:
+
+    errors: list[str] = []
+
+    profile_info = collect_profile_info(props.profile_dir, errors)
+
+    config_info, config = collect_config_info(errors)
+
+    drift_report = None
+
+    try:
+        if profile_info.health.healthy and config_info.health.healthy and config:
 
             drift_report = build_drift_report(
                 props.profile_dir,
@@ -194,23 +391,17 @@ def status(props: StatusProps) -> None:
             )
 
     except Exception as e:
-
         errors.append(f"Drift check failed: {e}")
 
-    # Final report
     report = StatusReport(
-        repo_status=repo_status,
-        config_status=config_status,
+        profile=profile_info,
+        config=config_info,
         drift=drift_report,
-        errors=errors,
     )
 
-    # Render
     if props.json:
         render_json(report)
-
     elif props.short:
         render_short(report)
-
     else:
         render_full(report)

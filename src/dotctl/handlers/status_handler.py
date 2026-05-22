@@ -8,11 +8,65 @@ from dotctl.handlers.config_handler import Config
 from dotctl.handlers.diff_handler import get_file_diff
 
 
+class StatusCode(Enum):
+
+    # Generic
+
+    OK = "ok"
+    UNKNOWN = "unknown"
+    ERROR = "error"
+
+    # Repository
+
+    REPO_NOT_FOUND = "repo_not_found"
+    REPO_INVALID_DIRECTORY = "repo_invalid_directory"
+    REPO_NOT_GIT = "repo_not_git"
+    REPO_BARE = "repo_bare"
+    REPO_REMOTE_UNAVAILABLE = "repo_remote_unavailable"
+    REPO_FETCH_FAILED = "repo_fetch_failed"
+
+    # Configuration
+
+    CONFIG_NOT_FOUND = "config_not_found"
+    CONFIG_INVALID_FILE = "config_invalid_file"
+    CONFIG_PARSE_FAILED = "config_parse_failed"
+    CONFIG_UNSUPPORTED = "config_unsupported"
+
+    # Drift
+
+    DRIFT_DETECTED = "drift_detected"
+    DRIFT_ANALYSIS_FAILED = "drift_analysis_failed"
+    DRIFT_CLEAN = "drift_clean"
+
+    # File states
+
+    FILE_MODIFIED = "file_modified"
+    FILE_MISSING_SOURCE = "file_missing_source"
+    FILE_MISSING_PROFILE = "file_missing_profile"
+
+    # Future
+
+    SYMLINK_BROKEN = "symlink_broken"
+    HOOK_FAILED = "hook_failed"
+    PERMISSION_DENIED = "permission_denied"
+
+
+class Severity(Enum):
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+    CRITICAL = "critical"
+
+
+def status_icon(healthy: bool) -> str:
+    return "✔" if healthy else "⚠"
+
+
 class FileState(Enum):
     SYNCED = "synced"
     MODIFIED = "modified"
     MISSING_SOURCE = "missing_source"
-    MISSING_REPO = "missing_repo"
+    MISSING_PROFILE = "missing_profile"
 
 
 @dataclass
@@ -50,7 +104,7 @@ def get_file_state(source: Path, repo_file: Path) -> FileState:
         return FileState.MISSING_SOURCE
 
     if source_exists and not repo_exists:
-        return FileState.MISSING_REPO
+        return FileState.MISSING_PROFILE
 
     if not source_exists and not repo_exists:
         return FileState.SYNCED  # edge case safe ignore
@@ -94,7 +148,7 @@ def build_drift_report(profile_dir: Path, config: Config) -> DriftReport:
         if r.state == FileState.MODIFIED:
             modified.append(r)
 
-        elif r.state in (FileState.MISSING_SOURCE, FileState.MISSING_REPO):
+        elif r.state in (FileState.MISSING_SOURCE, FileState.MISSING_PROFILE):
             missing.append(r)
 
         else:
