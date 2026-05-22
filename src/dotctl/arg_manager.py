@@ -296,11 +296,26 @@ def get_parser() -> argparse.ArgumentParser:
     diff_parser.add_argument(
         "--color",
         action="store_true",
+        help="Use color in diff output",
     )
 
     diff_parser.add_argument(
         "--side-by-side",
         action="store_true",
+        help="Use side-by-side diff output",
+    )
+
+    # Status Parser
+    status_parser = subparsers.add_parser("status", help="Status of dotfiles")
+    status_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print status in JSON format",
+    )
+    status_parser.add_argument(
+        "--short",
+        action="store_true",
+        help="Print status in short format",
     )
 
     # Wipe Parser
