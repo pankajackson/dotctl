@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import json
 
+from dotctl.handlers.config_handler import Config
 from dotctl.handlers.diff_handler import get_file_diff
 
 
@@ -53,7 +54,7 @@ def get_state(source: Path, repo_file: Path) -> FileState:
     return FileState.SYNCED
 
 
-def build_status_report(props, config, repo) -> StatusReport:
+def build_status_report(profile_dir: Path, config: Config) -> StatusReport:
 
     results: list[StatusEntry] = []
 
@@ -62,7 +63,7 @@ def build_status_report(props, config, repo) -> StatusReport:
         for entry in section.entries:
 
             source = Path(section.location) / entry
-            repo_file = props.profile_dir / name / entry
+            repo_file = profile_dir / name / entry
 
             state = get_state(source, repo_file)
 

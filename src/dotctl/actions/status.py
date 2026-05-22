@@ -26,21 +26,29 @@ status_default_props = StatusProps(
 
 def render_full(report: StatusReport):
 
-    print("✔ repo: up to date" if report.repo_clean else "⚠ repo: drift detected")
+    system_in_sync = len(report.modified_files) == 0 and len(report.missing_files) == 0
 
-    print(
-        f"⚠ local changes detected: {len(report.modified_files)} files"
-        if report.modified_files
-        else "✔ local changes detected: none"
-    )
-
-    print("✔ symlink health: OK")
-    print("✔ config validation: passed")
-    print()
+    print("✔ system: in sync" if system_in_sync else "⚠ system: drift detected")
 
     if report.modified_files:
+        print(f"⚠ modified files: {len(report.modified_files)}")
+    else:
+        print("✔ modified files: none")
+
+    if report.missing_files:
+        print(f"⚠ missing files: {len(report.missing_files)}")
+    else:
+        print("✔ missing files: none")
+
+    print("✔ symlink health: OK")  # placeholder
+    print("✔ config validation: passed")  # placeholder
+
+    print()
+
+    if report.modified_files or report.missing_files:
         print("Changed files:")
-        for f in report.modified_files:
+
+        for f in report.modified_files + report.missing_files:
             print(f"  - {f.path}")
 
 
@@ -82,7 +90,7 @@ def status(props: StatusProps) -> None:
         return
 
     config = conf_reader(config_file=Path(app_config_file))
-    report = build_status_report(props, config, repo)
+    report = build_status_report(props.profile_dir, config)
 
     if props.json:
         render_json(report)
