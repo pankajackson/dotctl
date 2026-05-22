@@ -81,26 +81,24 @@ def render_full(report: StatusReport):
     profile = report.profile
     config = report.config
 
-    print(f"{status_icon(profile.health.healthy)} " f"profile: {profile.health.message}")
-
-    print(f"{status_icon(config.health.healthy)} " f"config: {config.health.message}")
+    print(f"{status_icon(profile.health.healthy)} profile: {profile.health.message}")
+    print(f"{status_icon(config.health.healthy)} config: {config.health.message}")
 
     if profile.active_profile:
-        print(f"✔ active profile: {profile.active_profile}")
+        print(f"ℹ active profile: {profile.active_profile}")
 
     if profile.has_remote():
-        print(f"✔ remote: {profile.remote_url}")
+        print(f"ℹ remote: {profile.remote_url}")
 
     if not report.can_analyze_drift():
         print("\n⚠ drift analysis unavailable")
         return
 
     drift = report.drift
-
-    print()
-
     if drift is None:
         return
+
+    print()
 
     if drift.is_clean():
         print("✔ system: in sync")
