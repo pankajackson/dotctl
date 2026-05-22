@@ -284,6 +284,24 @@ def get_parser() -> argparse.ArgumentParser:
     pull_parser = subparsers.add_parser(
         "pull", help="Pull the latest changes from the dotfiles repository"
     )
+    # Diff Parser
+    diff_parser = subparsers.add_parser(
+        "diff", help="Diff the current dotfiles repository with the dotfiles repository"
+    )
+    diff_parser.add_argument(
+        "target",
+        nargs="?",
+        help="Specific file or directory to diff",
+    )
+    diff_parser.add_argument(
+        "--color",
+        action="store_true",
+    )
+
+    diff_parser.add_argument(
+        "--side-by-side",
+        action="store_true",
+    )
 
     # Wipe Parser
     wipe_parser = subparsers.add_parser("wipe", help="Wipe Profiles")
