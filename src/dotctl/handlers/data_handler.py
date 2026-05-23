@@ -133,11 +133,23 @@ def run_command(command: str, sudo_pass: str | None = None):
         return False, e.stderr.strip() if e.stderr else "", e.returncode  # Failure
 
 
+def path_exists(path: Path) -> bool:
+    """
+    Reliable existence check that raises PermissionError
+    instead of silently returning False.
+    """
+    try:
+        path.stat()
+        return True
+    except FileNotFoundError:
+        return False
+
+
 def delete(path: Path, skip_sudo=False, sudo_pass: str | None = None):
     temp_pass = None
-    path_exists = False
+    target_exists = False
     try:
-        path_exists = path.exists()
+        target_exists = path_exists(path)
     except PermissionError:
         if skip_sudo:
             log(f"PermissionError: skipping {path}")
@@ -146,9 +158,9 @@ def delete(path: Path, skip_sudo=False, sudo_pass: str | None = None):
             if not temp_pass and not sudo_pass:
                 temp_pass, sudo_pass, skip_sudo = get_sudo_pass(path)
             success, _, _ = run_command(f"ls {path}", temp_pass or sudo_pass)
-            path_exists = success
+            target_exists = success
 
-    if path_exists:
+    if target_exists:
         try:
             remove_file_or_dir(path, temp_pass or sudo_pass)
         except PermissionError:
@@ -167,7 +179,7 @@ def copy(source: Path, dest: Path, skip_sudo=False, sudo_pass=None, prune=False)
     is_dir = False  # Default to file
 
     try:
-        source_exists = source.exists()
+        source_exists = path_exists(source)
         is_dir = source.is_dir()
     except PermissionError:
         if skip_sudo:
