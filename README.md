@@ -32,9 +32,12 @@ Designed for developers and sysadmins, it supports pre/post hook scripts and is 
     - [❌ `remove` / `rm` / `delete` / `del`](#-remove--rm--delete--del)
     - [🧪 `apply`](#-apply)
     - [🔄 `pull`](#-pull)
+    - [🔍 `status`](#-status)
+    - [🔎 `diff`](#-diff)
     - [📤 `export`](#-export)
     - [📥 `import`](#-import)
     - [🔥 `wipe`](#-wipe)
+  - [⚠️ Limitations \& Notes](#️-limitations--notes)
   - [🧑‍💻 Development \& Publishing](#-development--publishing)
     - [Setup Development Environment](#setup-development-environment)
     - [Test the new code](#test-the-new-code)
@@ -521,6 +524,42 @@ dotctl pull
 
 ---
 
+### 🔍 `status`
+
+Inspect the current profile health and detect configuration drift between the repository and local system.
+
+```sh
+dotctl status [--json] [--short]
+```
+
+**Examples:**
+
+```sh
+dotctl status
+dotctl status --short
+dotctl status --json
+```
+
+---
+
+### 🔎 `diff`
+
+Compare tracked files between the repository and local system.
+
+```sh
+dotctl diff [--color] [--side-by-side]
+```
+
+**Examples:**
+
+```sh
+dotctl diff
+dotctl diff --color
+dotctl diff --side-by-side
+```
+
+---
+
 ### 📤 `export`
 
 Export a profile to `.dtsv`.
@@ -582,6 +621,15 @@ dotctl wipe -y
 **Options:**
 
 - `-y, --no-confirm` – Do not prompt before wiping.
+
+---
+
+## ⚠️ Limitations & Notes
+
+- Sudo support is currently available only for the `save` command.
+- Commands like `status`, `diff`, `apply`, and others may skip restricted files if permissions are insufficient.
+- Ensure tracked files/directories have proper read permissions before adding them to `dotctl.yaml`.
+- Missing or inaccessible files may appear as drift during `status` or `diff` operations.
 
 ---
 
