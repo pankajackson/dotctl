@@ -15,6 +15,8 @@ from .actions.remover import remove, remover_default_props
 from .actions.exporter import exporter, exporter_default_props
 from .actions.importer import importer, importer_default_props
 from .actions.wiper import wipe, wiper_default_props
+from .actions.differ import diff, differ_default_props
+from .actions.status import status, status_default_props
 
 
 class Action(Enum):
@@ -24,6 +26,7 @@ class Action(Enum):
     SWITCH = "switch"
     SW = "sw"
     PULL = "pull"
+    DIFF = "diff"
     SAVE = "save"
     APPLY = "apply"
     CREATE = "create"
@@ -35,6 +38,7 @@ class Action(Enum):
     IMPORT = "import"
     EXPORT = "export"
     WIPE = "wipe"
+    STATUS = "status"
     HELP = "help"
     VERSION = "version"
 
@@ -55,6 +59,7 @@ class DotCtl:
             Action.SWITCH: self.switch_profile,
             Action.SW: self.switch_profile,
             Action.PULL: self.pull_profile,
+            Action.DIFF: self.check_diff,
             Action.CREATE: self.create_profile,
             Action.NEW: self.create_profile,
             Action.REMOVE: self.remove_profile,
@@ -64,6 +69,7 @@ class DotCtl:
             Action.EXPORT: self.export_profile,
             Action.IMPORT: self.import_profile,
             Action.WIPE: self.wipe_profile,
+            Action.STATUS: self.show_status,
         }
         action_methods.get(self.action, lambda: None)()
 
@@ -148,6 +154,18 @@ class DotCtl:
         """Pull dotfiles profile."""
         pull(puller_default_props)
 
+    def check_diff(self):
+        """Check diff between current and previous dotfiles."""
+        props = self._build_props(
+            differ_default_props, "side_by_side", "color", "target"
+        )
+        diff(props)
+
+    def show_status(self):
+        """Show status of dotfiles."""
+        props = self._build_props(status_default_props, "json", "short")
+        status(props)
+
 
 @exception_handler
 def main():
@@ -187,6 +205,11 @@ def main():
         "fetch": getattr(args, "fetch", False),
         "no_confirm": getattr(args, "no_confirm", False),
         "prune": getattr(args, "prune", False),
+        "color": getattr(args, "color", False),
+        "side_by_side": getattr(args, "side_by_side", False),
+        "target": getattr(args, "target", None),
+        "json": getattr(args, "json", None),
+        "short": getattr(args, "short", None),
     }
 
     dot_ctl_obj = DotCtl(**common_args)
