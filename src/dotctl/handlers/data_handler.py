@@ -35,7 +35,9 @@ def rsync(
         destination_str,
     ]
 
-    output = run_privileged(command, sudo_pass, operation="rsync")
+    output = run_privileged(
+        command, sudo_pass, operation="rsync", log_failure=False
+    )
     if user_owned_destination and sudo_pass is not None:
         owner = f"{os.getuid()}:{os.getgid()}"
         run_privileged(
@@ -109,11 +111,16 @@ def copy(
     prune=False,
     required_sudo: bool = False,
     user_owned_destination: bool = False,
+    skipped_paths: list[Path] | None = None,
 ):
     """Copies files/directories using rsync and handles sudo permission issues."""
     temp_pass = None
     source_exists = False
     is_dir = False  # Default to file
+
+    def record_skip(path: Path) -> None:
+        if skipped_paths is not None and path not in skipped_paths:
+            skipped_paths.append(path)
 
     if required_sudo and sudo_credential(temp_pass, sudo_pass) is None:
         # Empty credential selects `sudo -n` in the shared command runner.
@@ -125,14 +132,17 @@ def copy(
     except PermissionError:
         if skip_sudo:
             log(f"PermissionError: skipping {source}")
+            record_skip(source)
             return skip_sudo, sudo_pass
         else:
             if sudo_credential(temp_pass, sudo_pass) is None:
                 temp_pass, sudo_pass, skip_sudo = request_sudo(source)
             if skip_sudo:
+                record_skip(source)
                 return skip_sudo, sudo_pass
             credential = sudo_credential(temp_pass, sudo_pass)
             if credential is None:
+                record_skip(source)
                 return skip_sudo, sudo_pass
             success, stderr, _ = run_command(
                 ["ls", "-ld", str(source)], credential
@@ -140,9 +150,11 @@ def copy(
             if not success and credential == "":
                 temp_pass, sudo_pass, skip_sudo = request_sudo(source)
                 if skip_sudo:
+                    record_skip(source)
                     return skip_sudo, sudo_pass
                 credential = sudo_credential(temp_pass, sudo_pass)
                 if credential is None:
+                    record_skip(source)
                     return skip_sudo, sudo_pass
                 success, stderr, _ = run_command(
                     ["ls", "-ld", str(source)], credential
@@ -163,6 +175,7 @@ def copy(
             except PermissionError:
                 if skip_sudo:
                     log(f"PermissionError: skipping destination {dest.parent}")
+                    record_skip(source)
                     return skip_sudo, sudo_pass
 
                 if sudo_credential(temp_pass, sudo_pass) is None:
@@ -170,6 +183,7 @@ def copy(
 
                 parent_pass = sudo_credential(temp_pass, sudo_pass)
                 if parent_pass is None:
+                    record_skip(source)
                     return skip_sudo, sudo_pass
 
                 success, stderr, exit_code = run_command(
@@ -178,9 +192,11 @@ def copy(
                 if not success and parent_pass == "":
                     temp_pass, sudo_pass, skip_sudo = request_sudo(dest.parent)
                     if skip_sudo:
+                        record_skip(source)
                         return skip_sudo, sudo_pass
                     parent_pass = sudo_credential(temp_pass, sudo_pass)
                     if parent_pass is None:
+                        record_skip(source)
                         return skip_sudo, sudo_pass
                     success, stderr, exit_code = run_command(
                         ["mkdir", "-p", str(dest.parent)], parent_pass
@@ -201,7 +217,6 @@ def copy(
                 user_owned_destination=user_owned_destination,
             )
         except PermissionError:
-            log(f"PermissionError: {source} requires sudo access.")
             if not skip_sudo:
                 temp_pass, sudo_pass, skip_sudo = request_sudo(source)
                 credential = sudo_credential(temp_pass, sudo_pass)
@@ -213,6 +228,15 @@ def copy(
                         is_dir=is_dir,
                         user_owned_destination=user_owned_destination,
                     )
+                else:
+                    log(
+                        f"PermissionError: skipping {source} "
+                        "(sudo access unavailable)."
+                    )
+                    record_skip(source)
+            else:
+                log(f"PermissionError: skipping {source} (sudo operations disabled).")
+                record_skip(source)
     else:
         if prune:
             log(f'Removing "{dest.parent.name}:{dest.name}"...')

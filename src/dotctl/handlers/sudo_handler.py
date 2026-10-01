@@ -116,13 +116,15 @@ def run_privileged(
     command: list[str],
     sudo_pass: str | None = None,
     operation: str = "command",
+    log_failure: bool = True,
 ) -> str:
     """Run an operation and translate permission failures consistently."""
     success, output, return_code = run_command(command, sudo_pass)
     if success:
         return output.strip()
 
-    log(f"{operation} failed: {output}")
+    if log_failure:
+        log(f"{operation} failed: {output}")
     raise_if_sudo_failed(output)
     if "Permission denied" in output or return_code == 13:
         raise PermissionError(output)
