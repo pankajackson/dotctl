@@ -43,24 +43,41 @@ saver_default_props = SaverProps(
 def save(props: SaverProps) -> None:
     log("Saving profile...")
     profile_dir = Path(app_profile_directory)
-    profile = props.profile
     repo = get_repo(profile_dir)
 
-    _, remote_profiles, active_profile, all_profiles = get_repo_branches(repo)
-    if profile is not None and active_profile != profile:
-        if profile not in all_profiles:
+    _, _, original_profile, all_profiles = get_repo_branches(repo)
+    target_profile = props.profile or original_profile
+    switched_profile = target_profile != original_profile
+
+    if switched_profile:
+        if target_profile not in all_profiles:
             git_fetch(repo)
-            _, remote_profiles, active_profile, all_profiles = get_repo_branches(repo)
-        if profile in all_profiles:
-            checkout_branch(repo, profile)
-            log(f"Switched to profile: {profile}")
+            _, _, _, all_profiles = get_repo_branches(repo)
+        if target_profile in all_profiles:
+            checkout_branch(repo, target_profile)
+            log(f"Switched to profile: {target_profile}")
         else:
-            create_branch(repo=repo, branch=profile)
-            log(f"Profile '{profile}' created and activated successfully.")
+            # A new profile starts at the current profile's commit, making it a
+            # copy of the active profile before this save applies local files.
+            create_branch(repo=repo, branch=target_profile)
+            log(f"Profile '{target_profile}' created from '{original_profile}'.")
+
+    try:
+        _save_current_profile(props, profile_dir, repo, target_profile)
+    finally:
+        if switched_profile and repo.active_branch.name != original_profile:
+            checkout_branch(repo, original_profile)
+            log(f"Returned to profile: {original_profile}")
+
+
+def _save_current_profile(
+    props: SaverProps, profile_dir: Path, repo, target_profile: str
+) -> None:
     if pull_changes(repo):
         log("Pulled latest changes from cloud successfully.")
 
     config = conf_reader(config_file=Path(app_config_file))
+    skipped_paths: list[Path] = []
 
     for name, section in config.save.items():
         source_base_dir = Path(section.location)
@@ -76,6 +93,9 @@ def save(props: SaverProps) -> None:
                 skip_sudo=props.skip_sudo,
                 sudo_pass=props.password,
                 prune=props.prune,
+                required_sudo=section.required_sudo,
+                user_owned_destination=True,
+                skipped_paths=skipped_paths,
             )
 
             # Updated props
@@ -149,14 +169,23 @@ def save(props: SaverProps) -> None:
         full_message = f"{hostname} | {timestamp}"
         commit_changes(repo=repo, message=full_message)
         is_remote, _ = is_remote_repo(repo=repo)
-        profile = active_profile if not profile else profile
         if is_remote:
-            if profile not in remote_profiles:
-                git_fetch(repo=repo)
-            if not profile in remote_profiles:
+            git_fetch(repo=repo)
+            _, remote_profiles, _, _ = get_repo_branches(repo)
+            if target_profile not in remote_profiles:
                 push_new_branch(repo=repo)
             else:
                 push_existing_branch(repo=repo)
-        log("✅ Profile saved successfully!")
+        if skipped_paths:
+            log("⚠ Profile save completed with skipped entries:")
+            for path in skipped_paths:
+                log(f"  - {path}")
+        else:
+            log("✅ Profile saved successfully!")
     else:
-        log("ℹ️ No changes detected!")
+        if skipped_paths:
+            log("⚠ No changes saved for skipped entries:")
+            for path in skipped_paths:
+                log(f"  - {path}")
+        else:
+            log("ℹ️ No changes detected!")

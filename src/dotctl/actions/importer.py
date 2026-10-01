@@ -130,7 +130,6 @@ def importer(props: ImporterProps) -> None:
             for name, section in config.export.items():
                 source_base_dir = profile_dir / __EXPORT_DATA_DIR__ / name
                 dest_base_dir = Path(section.location)
-                dest_base_dir.mkdir(parents=True, exist_ok=True)
 
                 log(f'Importing "{name}"...')
                 for entry in section.entries:
@@ -141,6 +140,7 @@ def importer(props: ImporterProps) -> None:
                         dest,
                         skip_sudo=props.skip_sudo,
                         sudo_pass=props.password,
+                        required_sudo=section.required_sudo,
                     )
 
                 # Updated props

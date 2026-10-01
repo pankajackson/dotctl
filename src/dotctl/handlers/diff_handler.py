@@ -1,23 +1,31 @@
 from pathlib import Path
 from difflib import unified_diff, SequenceMatcher
-import os
 from rich.console import Console
 from rich.table import Table
+from dotctl.handlers.sudo_handler import (
+    is_directory,
+    is_symlink,
+    list_path_files,
+    path_exists,
+    read_path_text,
+)
 
 console = Console()
 
 
-def get_file_diff(source: Path, dest: Path) -> list[str] | None:
-    if not _path_exists(source) and not _path_exists(dest):
+def get_file_diff(
+    source: Path, dest: Path, *, required_sudo: bool = False
+) -> list[str] | None:
+    if not _path_exists(source, required_sudo=required_sudo) and not _path_exists(dest):
         return None
 
-    if source.is_symlink() or dest.is_symlink():
-        return _get_single_file_diff(source, dest)
+    if is_symlink(source, required_sudo=required_sudo) or is_symlink(dest):
+        return _get_single_file_diff(source, dest, required_sudo=required_sudo)
 
     # Configured entries may be directories. Compare their files by relative
     # path so additions and removals are reported as well as content changes.
-    if (source.exists() and source.is_dir()) or (dest.exists() and dest.is_dir()):
-        source_files = _directory_files(source)
+    if is_directory(source, required_sudo=required_sudo) or is_directory(dest):
+        source_files = _directory_files(source, required_sudo=required_sudo)
         dest_files = _directory_files(dest)
         diffs: list[str] = []
         for relative_path in sorted(source_files.keys() | dest_files.keys()):
@@ -34,6 +42,7 @@ def get_file_diff(source: Path, dest: Path) -> list[str] | None:
             file_diff = _get_single_file_diff(
                 source_file,
                 dest_file,
+                required_sudo=required_sudo and source_file in source_files.values(),
             )
             if file_diff:
                 diffs.extend(file_diff)
@@ -42,38 +51,48 @@ def get_file_diff(source: Path, dest: Path) -> list[str] | None:
     return _get_single_file_diff(source, dest)
 
 
-def _directory_files(directory: Path) -> dict[Path, Path]:
-    if not directory.is_dir():
+def _directory_files(
+    directory: Path, *, required_sudo: bool = False
+) -> dict[Path, Path]:
+    if not is_directory(directory, required_sudo=required_sudo):
         return {}
     return {
         path.relative_to(directory): path
-        for path in directory.rglob("*")
-        if path.is_file() or path.is_symlink()
+        for path in list_path_files(directory, required_sudo=required_sudo)
     }
 
 
-def _path_exists(path: Path) -> bool:
+def _path_exists(path: Path, *, required_sudo: bool = False) -> bool:
     try:
         path.lstat()
         return True
     except FileNotFoundError:
         return False
+    except PermissionError:
+        return path_exists(path, required_sudo=required_sudo)
 
 
-def _read_lines(path: Path, keepends: bool = True) -> list[str]:
-    if path.is_symlink():
+def _read_lines(
+    path: Path, keepends: bool = True, *, required_sudo: bool = False
+) -> list[str]:
+    if is_symlink(path, required_sudo=required_sudo):
         suffix = "\n" if keepends else ""
-        return [f"symlink -> {os.readlink(path)}{suffix}"]
-    if path.is_file():
-        return path.read_text().splitlines(keepends=keepends)
+        target = read_path_text(path, required_sudo=required_sudo)
+        return [f"symlink -> {target}{suffix}"]
+    if _path_exists(path, required_sudo=required_sudo):
+        return read_path_text(path, required_sudo=required_sudo).splitlines(
+            keepends=keepends
+        )
     return []
 
 
-def _get_single_file_diff(source: Path, dest: Path) -> list[str] | None:
-    if not _path_exists(source) and not _path_exists(dest):
+def _get_single_file_diff(
+    source: Path, dest: Path, *, required_sudo: bool = False
+) -> list[str] | None:
+    if not _path_exists(source, required_sudo=required_sudo) and not _path_exists(dest):
         return None
 
-    source_lines = _read_lines(source)
+    source_lines = _read_lines(source, required_sudo=required_sudo)
     dest_lines = _read_lines(dest)
 
     diff = list(
@@ -136,10 +155,10 @@ def render_colored_diff(lines: list[str]) -> None:
             console.print(line)
 
 
-def render_side_by_side(source, dest):
+def render_side_by_side(source, dest, *, required_sudo: bool = False):
 
-    if (source.exists() and source.is_dir()) or (dest.exists() and dest.is_dir()):
-        source_files = _directory_files(source)
+    if is_directory(source, required_sudo=required_sudo) or is_directory(dest):
+        source_files = _directory_files(source, required_sudo=required_sudo)
         dest_files = _directory_files(dest)
         for relative_path in sorted(source_files.keys() | dest_files.keys()):
             source_file = (
@@ -152,12 +171,22 @@ def render_side_by_side(source, dest):
                 if relative_path in dest_files
                 else dest / relative_path
             )
-            if get_file_diff(source_file, dest_file):
+            if get_file_diff(
+                source_file,
+                dest_file,
+                required_sudo=required_sudo and source_file in source_files.values(),
+            ):
                 console.print(f"\n{relative_path}", style="bold")
-                render_side_by_side(source_file, dest_file)
+                render_side_by_side(
+                    source_file,
+                    dest_file,
+                required_sudo=required_sudo and source_file in source_files.values(),
+                )
         return
 
-    source_lines = _read_lines(source, keepends=False)
+    source_lines = _read_lines(
+        source, keepends=False, required_sudo=required_sudo
+    )
     dest_lines = _read_lines(dest, keepends=False)
 
     matcher = SequenceMatcher(None, dest_lines, source_lines)

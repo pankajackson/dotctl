@@ -1,9 +1,11 @@
 from enum import Enum
 from dataclasses import dataclass, field
 from pathlib import Path
+import subprocess
 
 from dotctl.handlers.config_handler import Config
 from dotctl.handlers.diff_handler import get_file_diff
+from dotctl.handlers.sudo_handler import path_exists
 
 
 class StatusCode(Enum):
@@ -105,8 +107,10 @@ class DriftReport:
         return self.total_drift() == 0
 
 
-def get_file_state(source: Path, repo_file: Path) -> FileState:
-    source_exists = _path_presence(source)
+def get_file_state(
+    source: Path, repo_file: Path, *, required_sudo: bool = False
+) -> FileState:
+    source_exists = _path_presence(source, required_sudo=required_sudo)
     repo_exists = _path_presence(repo_file)
 
     if source_exists is None or repo_exists is None:
@@ -122,8 +126,8 @@ def get_file_state(source: Path, repo_file: Path) -> FileState:
         return FileState.NOT_PRESENT
 
     try:
-        diff = get_file_diff(source, repo_file)
-    except PermissionError:
+        diff = get_file_diff(source, repo_file, required_sudo=required_sudo)
+    except (PermissionError, subprocess.CalledProcessError):
         return FileState.INACCESSIBLE
 
     if diff:
@@ -132,7 +136,7 @@ def get_file_state(source: Path, repo_file: Path) -> FileState:
     return FileState.SYNCED
 
 
-def _path_presence(path: Path) -> bool | None:
+def _path_presence(path: Path, *, required_sudo: bool = False) -> bool | None:
     """Return presence including dangling symlinks, or None if inaccessible."""
     try:
         path.lstat()
@@ -140,7 +144,10 @@ def _path_presence(path: Path) -> bool | None:
     except FileNotFoundError:
         return False
     except PermissionError:
-        return None
+        try:
+            return path_exists(path, required_sudo=required_sudo)
+        except (PermissionError, subprocess.CalledProcessError):
+            return None
 
 
 def build_drift_report(profile_dir: Path, config: Config) -> DriftReport:
@@ -154,7 +161,9 @@ def build_drift_report(profile_dir: Path, config: Config) -> DriftReport:
             source = Path(section.location) / entry
             repo_file = profile_dir / name / entry
 
-            state = get_file_state(source, repo_file)
+            state = get_file_state(
+                source, repo_file, required_sudo=section.required_sudo
+            )
 
             results.append(
                 StatusEntry(

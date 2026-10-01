@@ -72,13 +72,16 @@ def apply(props: ActivatorProps) -> None:
     for name, section in config.save.items():
         source_base_dir = profile_dir / name
         dest_base_dir = Path(section.location)
-        dest_base_dir.mkdir(exist_ok=True)
         log(f'Applying "{name}"...')
         for entry in section.entries:
             source = source_base_dir / entry
             dest = dest_base_dir / entry
             result = copy(
-                source, dest, skip_sudo=props.skip_sudo, sudo_pass=props.password
+                source,
+                dest,
+                skip_sudo=props.skip_sudo,
+                sudo_pass=props.password,
+                required_sudo=section.required_sudo,
             )
 
             # Updated props
