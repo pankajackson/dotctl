@@ -129,7 +129,7 @@ def run_privileged(
 
 
 def run_for_path(
-    command: list[str], path: Path, *, sudo: bool = False
+    command: list[str], path: Path, *, required_sudo: bool = False
 ) -> str:
     """Run a path operation normally, or through the shared sudo flow."""
     global _cached_password, _skip_all
@@ -137,7 +137,7 @@ def run_for_path(
     if _skip_all:
         raise SudoSkipped(f"Skipped {path}")
 
-    if not sudo:
+    if not required_sudo:
         success, output, return_code = run_command(command)
         if success:
             return output
@@ -200,14 +200,18 @@ def run_for_path(
     raise subprocess.CalledProcessError(return_code, command, output)
 
 
-def read_path_text(path: Path, *, sudo: bool = False) -> str:
+def read_path_text(path: Path, *, required_sudo: bool = False) -> str:
     """Read a text file or symlink target through the shared access flow."""
-    if is_symlink(path, sudo=sudo):
-        return run_for_path(["readlink", str(path)], path, sudo=sudo).rstrip("\n")
-    return run_for_path(["cat", str(path)], path, sudo=sudo)
+    if is_symlink(path, required_sudo=required_sudo):
+        return run_for_path(
+            ["readlink", str(path)], path, required_sudo=required_sudo
+        ).rstrip("\n")
+    return run_for_path(["cat", str(path)], path, required_sudo=required_sudo)
 
 
-def list_path_files(directory: Path, *, sudo: bool = False) -> list[Path]:
+def list_path_files(
+    directory: Path, *, required_sudo: bool = False
+) -> list[Path]:
     """List files and symlinks recursively without losing permission errors."""
     command = [
         "find",
@@ -222,7 +226,7 @@ def list_path_files(directory: Path, *, sudo: bool = False) -> list[Path]:
         "-print0",
     ]
     try:
-        output = run_for_path(command, directory, sudo=sudo)
+        output = run_for_path(command, directory, required_sudo=required_sudo)
     except subprocess.CalledProcessError as error:
         if "No such file or directory" in str(error.stderr):
             return []
@@ -230,7 +234,7 @@ def list_path_files(directory: Path, *, sudo: bool = False) -> list[Path]:
     return [Path(item) for item in output.split("\0") if item]
 
 
-def path_exists(path: Path, *, sudo: bool = False) -> bool:
+def path_exists(path: Path, *, required_sudo: bool = False) -> bool:
     try:
         path.lstat()
         return True
@@ -238,7 +242,9 @@ def path_exists(path: Path, *, sudo: bool = False) -> bool:
         return False
     except PermissionError:
         try:
-            run_for_path(["ls", "-ld", str(path)], path, sudo=sudo)
+            run_for_path(
+                ["ls", "-ld", str(path)], path, required_sudo=required_sudo
+            )
             return True
         except subprocess.CalledProcessError as error:
             if "No such file or directory" in str(error.stderr):
@@ -246,25 +252,29 @@ def path_exists(path: Path, *, sudo: bool = False) -> bool:
             raise
 
 
-def is_directory(path: Path, *, sudo: bool = False) -> bool:
-    if not path_exists(path, sudo=sudo):
+def is_directory(path: Path, *, required_sudo: bool = False) -> bool:
+    if not path_exists(path, required_sudo=required_sudo):
         return False
     if path.is_dir():
         return True
     try:
-        run_for_path(["test", "-d", str(path)], path, sudo=sudo)
+        run_for_path(
+            ["test", "-d", str(path)], path, required_sudo=required_sudo
+        )
         return True
     except subprocess.CalledProcessError:
         return False
 
 
-def is_symlink(path: Path, *, sudo: bool = False) -> bool:
+def is_symlink(path: Path, *, required_sudo: bool = False) -> bool:
     if path.is_symlink():
         return True
-    if not path_exists(path, sudo=sudo):
+    if not path_exists(path, required_sudo=required_sudo):
         return False
     try:
-        run_for_path(["test", "-L", str(path)], path, sudo=sudo)
+        run_for_path(
+            ["test", "-L", str(path)], path, required_sudo=required_sudo
+        )
         return True
     except subprocess.CalledProcessError:
         return False

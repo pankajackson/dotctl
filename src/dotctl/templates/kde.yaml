@@ -24,12 +24,12 @@ export:
       - Kvantum
       - themes
     location: $SYS_SHARE_DIR
-    sudo: true
+    required_sudo: true
   sddm:
     entries:
       - themes
     location: $SYS_SHARE_DIR/sddm
-    sudo: true
+    required_sudo: true
   share_folder:
     entries:
       - plasma
@@ -88,4 +88,4 @@ save:
     entries:
       - sddm.conf.d
     location: $SYS_CONFIG_DIR
-    sudo: true
+    required_sudo: true

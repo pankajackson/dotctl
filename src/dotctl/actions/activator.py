@@ -81,7 +81,7 @@ def apply(props: ActivatorProps) -> None:
                 dest,
                 skip_sudo=props.skip_sudo,
                 sudo_pass=props.password,
-                sudo=section.sudo,
+                required_sudo=section.required_sudo,
             )
 
             # Updated props

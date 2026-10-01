@@ -76,7 +76,7 @@ def save(props: SaverProps) -> None:
                 skip_sudo=props.skip_sudo,
                 sudo_pass=props.password,
                 prune=props.prune,
-                sudo=section.sudo,
+                required_sudo=section.required_sudo,
             )
 
             # Updated props

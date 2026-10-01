@@ -22,7 +22,7 @@ from dotctl.utils import log
 class EntryConfig:
     entries: list[str]
     location: str
-    sudo: bool = False
+    required_sudo: bool = False
 
 
 @dataclass
@@ -84,9 +84,11 @@ def conf_reader(config_file: Path = Path(app_config_file)) -> Config:
     def load_section(name: str, values: dict) -> EntryConfig:
         if not isinstance(values, dict):
             raise ValueError(f"Config section '{name}' must be a mapping.")
-        sudo = values.get("sudo", False)
-        if not isinstance(sudo, bool):
-            raise ValueError(f"Config section '{name}'.sudo must be true or false.")
+        required_sudo = values.get("required_sudo", False)
+        if not isinstance(required_sudo, bool):
+            raise ValueError(
+                f"Config section '{name}'.required_sudo must be true or false."
+            )
         entries = values.get("entries")
         if not isinstance(entries, list) or not all(
             isinstance(entry, str) for entry in entries
@@ -97,7 +99,9 @@ def conf_reader(config_file: Path = Path(app_config_file)) -> Config:
         location = values.get("location")
         if not isinstance(location, str):
             raise ValueError(f"Config section '{name}'.location must be a path.")
-        return EntryConfig(entries=entries, location=location, sudo=sudo)
+        return EntryConfig(
+            entries=entries, location=location, required_sudo=required_sudo
+        )
 
     return Config(
         save={k: load_section(k, v) for k, v in config["save"].items()},

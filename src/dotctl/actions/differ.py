@@ -75,7 +75,9 @@ def diff(props: DiffProps) -> None:
                     source = source_root / relative_target
                     repo_file = repo_root / relative_target
             try:
-                diff_lines = get_file_diff(source, repo_file, sudo=section.sudo)
+                diff_lines = get_file_diff(
+                    source, repo_file, required_sudo=section.required_sudo
+                )
             except (PermissionError, subprocess.CalledProcessError):
                 inaccessible_paths.append(source)
                 log(f"⚠ Cannot read {source}; permission denied. Skipping this entry.")
@@ -87,7 +89,11 @@ def diff(props: DiffProps) -> None:
                 print(f"\n🔍 Diff: {name}/{entry}")
                 if props.side_by_side:
                     try:
-                        render_side_by_side(source, repo_file, sudo=section.sudo)
+                        render_side_by_side(
+                            source,
+                            repo_file,
+                            required_sudo=section.required_sudo,
+                        )
                     except (PermissionError, subprocess.CalledProcessError):
                         inaccessible_paths.append(source)
                         log(f"⚠ Cannot read {source}; permission denied.")

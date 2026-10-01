@@ -94,14 +94,14 @@ def copy(
     skip_sudo=False,
     sudo_pass=None,
     prune=False,
-    sudo: bool = False,
+    required_sudo: bool = False,
 ):
     """Copies files/directories using rsync and handles sudo permission issues."""
     temp_pass = None
     source_exists = False
     is_dir = False  # Default to file
 
-    if sudo and sudo_credential(temp_pass, sudo_pass) is None:
+    if required_sudo and sudo_credential(temp_pass, sudo_pass) is None:
         # Empty credential selects `sudo -n` in the shared command runner.
         temp_pass = ""
 

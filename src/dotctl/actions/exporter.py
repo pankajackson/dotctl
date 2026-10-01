@@ -96,7 +96,7 @@ def exporter(props: ExporterProps) -> None:
                     dest,
                     skip_sudo=props.skip_sudo,
                     sudo_pass=props.password,
-                    sudo=section.sudo,
+                    required_sudo=section.required_sudo,
                 )
 
                 # Update props based on the result

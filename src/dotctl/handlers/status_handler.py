@@ -108,9 +108,9 @@ class DriftReport:
 
 
 def get_file_state(
-    source: Path, repo_file: Path, *, sudo: bool = False
+    source: Path, repo_file: Path, *, required_sudo: bool = False
 ) -> FileState:
-    source_exists = _path_presence(source, sudo=sudo)
+    source_exists = _path_presence(source, required_sudo=required_sudo)
     repo_exists = _path_presence(repo_file)
 
     if source_exists is None or repo_exists is None:
@@ -126,7 +126,7 @@ def get_file_state(
         return FileState.NOT_PRESENT
 
     try:
-        diff = get_file_diff(source, repo_file, sudo=sudo)
+        diff = get_file_diff(source, repo_file, required_sudo=required_sudo)
     except (PermissionError, subprocess.CalledProcessError):
         return FileState.INACCESSIBLE
 
@@ -136,7 +136,7 @@ def get_file_state(
     return FileState.SYNCED
 
 
-def _path_presence(path: Path, *, sudo: bool = False) -> bool | None:
+def _path_presence(path: Path, *, required_sudo: bool = False) -> bool | None:
     """Return presence including dangling symlinks, or None if inaccessible."""
     try:
         path.lstat()
@@ -145,7 +145,7 @@ def _path_presence(path: Path, *, sudo: bool = False) -> bool | None:
         return False
     except PermissionError:
         try:
-            return path_exists(path, sudo=sudo)
+            return path_exists(path, required_sudo=required_sudo)
         except (PermissionError, subprocess.CalledProcessError):
             return None
 
@@ -161,7 +161,9 @@ def build_drift_report(profile_dir: Path, config: Config) -> DriftReport:
             source = Path(section.location) / entry
             repo_file = profile_dir / name / entry
 
-            state = get_file_state(source, repo_file, sudo=section.sudo)
+            state = get_file_state(
+                source, repo_file, required_sudo=section.required_sudo
+            )
 
             results.append(
                 StatusEntry(
