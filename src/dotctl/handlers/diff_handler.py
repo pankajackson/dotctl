@@ -10,13 +10,45 @@ def get_file_diff(source: Path, dest: Path) -> list[str] | None:
     if not source.exists() and not dest.exists():
         return None
 
+    # Configured entries may be directories. Compare their files by relative
+    # path so additions and removals are reported as well as content changes.
+    if (source.exists() and source.is_dir()) or (dest.exists() and dest.is_dir()):
+        source_files = _directory_files(source)
+        dest_files = _directory_files(dest)
+        diffs: list[str] = []
+        for relative_path in sorted(source_files.keys() | dest_files.keys()):
+            file_diff = _get_single_file_diff(
+                source_files.get(relative_path, source / relative_path),
+                dest_files.get(relative_path, dest / relative_path),
+            )
+            if file_diff:
+                diffs.extend(file_diff)
+        return diffs
+
+    return _get_single_file_diff(source, dest)
+
+
+def _directory_files(directory: Path) -> dict[Path, Path]:
+    if not directory.is_dir():
+        return {}
+    return {
+        path.relative_to(directory): path
+        for path in directory.rglob("*")
+        if path.is_file()
+    }
+
+
+def _get_single_file_diff(source: Path, dest: Path) -> list[str] | None:
+    if not source.exists() and not dest.exists():
+        return None
+
     source_lines = []
     dest_lines = []
 
-    if source.exists():
+    if source.exists() and source.is_file():
         source_lines = source.read_text().splitlines(keepends=True)
 
-    if dest.exists():
+    if dest.exists() and dest.is_file():
         dest_lines = dest.read_text().splitlines(keepends=True)
 
     diff = list(
@@ -71,6 +103,17 @@ def render_colored_diff(lines: list[str]) -> None:
 
 
 def render_side_by_side(source, dest):
+
+    if (source.exists() and source.is_dir()) or (dest.exists() and dest.is_dir()):
+        source_files = _directory_files(source)
+        dest_files = _directory_files(dest)
+        for relative_path in sorted(source_files.keys() | dest_files.keys()):
+            source_file = source_files.get(relative_path, source / relative_path)
+            dest_file = dest_files.get(relative_path, dest / relative_path)
+            if get_file_diff(source_file, dest_file):
+                console.print(f"\n{relative_path}", style="bold")
+                render_side_by_side(source_file, dest_file)
+        return
 
     source_lines = []
     dest_lines = []
