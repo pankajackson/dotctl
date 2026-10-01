@@ -102,6 +102,7 @@ def raise_if_sudo_failed(stderr: str) -> None:
         marker in message
         for marker in (
             "a password is required",
+            "interactive authentication is required",
             "sorry, try again",
             "incorrect password",
             "not allowed to execute",

@@ -1,3 +1,4 @@
+import os
 import subprocess
 from pathlib import Path
 from dotctl.utils import log
@@ -11,7 +12,11 @@ from dotctl.handlers.sudo_handler import (
 
 
 def rsync(
-    source: Path, destination: Path, sudo_pass: str | None = None, is_dir: bool = False
+    source: Path,
+    destination: Path,
+    sudo_pass: str | None = None,
+    is_dir: bool = False,
+    user_owned_destination: bool = False,
 ):
     """Synchronizes source to destination using rsync with optional sudo support."""
     rsync_command = "rsync"
@@ -30,7 +35,15 @@ def rsync(
         destination_str,
     ]
 
-    return run_privileged(command, sudo_pass, operation="rsync")
+    output = run_privileged(command, sudo_pass, operation="rsync")
+    if user_owned_destination and sudo_pass is not None:
+        owner = f"{os.getuid()}:{os.getgid()}"
+        run_privileged(
+            ["chown", "-R", "-h", owner, str(destination)],
+            sudo_pass,
+            operation="destination ownership update",
+        )
+    return output
 
 
 def remove_file_or_dir(
@@ -95,6 +108,7 @@ def copy(
     sudo_pass=None,
     prune=False,
     required_sudo: bool = False,
+    user_owned_destination: bool = False,
 ):
     """Copies files/directories using rsync and handles sudo permission issues."""
     temp_pass = None
@@ -179,14 +193,26 @@ def copy(
                         stderr,
                     )
 
-            rsync(source, dest, sudo_credential(temp_pass, sudo_pass), is_dir=is_dir)
+            rsync(
+                source,
+                dest,
+                sudo_credential(temp_pass, sudo_pass),
+                is_dir=is_dir,
+                user_owned_destination=user_owned_destination,
+            )
         except PermissionError:
             log(f"PermissionError: {source} requires sudo access.")
             if not skip_sudo:
                 temp_pass, sudo_pass, skip_sudo = request_sudo(source)
                 credential = sudo_credential(temp_pass, sudo_pass)
                 if credential is not None:
-                    rsync(source, dest, credential, is_dir=is_dir)
+                    rsync(
+                        source,
+                        dest,
+                        credential,
+                        is_dir=is_dir,
+                        user_owned_destination=user_owned_destination,
+                    )
     else:
         if prune:
             log(f'Removing "{dest.parent.name}:{dest.name}"...')
