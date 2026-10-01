@@ -120,4 +120,10 @@ def exporter(props: ExporterProps) -> None:
             f"✅ Successfully exported to {export_profile_path.with_suffix(__EXPORT_EXTENSION__)}"
         )
     finally:
+        try:
+            if repo.active_branch.name != active_profile:
+                checkout_branch(repo, active_profile)
+                log(f"Switched back to profile: {active_profile}")
+        except Exception as error:
+            log(f"Failed to restore profile '{active_profile}': {error}")
         shutil.rmtree(export_profile_path, ignore_errors=True)

@@ -109,16 +109,32 @@ def save(props: SaverProps) -> None:
                     if sudo_pass is not None:
                         props.password = sudo_pass
             else:
-                entry_list = dot.iterdir()
-                for entry in entry_list:
-                    if entry.name not in config.save[dot.name].entries:
-                        log(f'Removing "{dot.name}:{entry.name}"...')
+                section = config.save[dot.name]
+                configured_entries = [Path(entry) for entry in section.entries]
+                source_base_dir = Path(section.location)
+                candidates = sorted(
+                    dot.rglob("*"),
+                    key=lambda path: len(path.parts),
+                    reverse=True,
+                )
+                for candidate in candidates:
+                    relative_path = candidate.relative_to(dot)
+                    keep = any(
+                        relative_path == configured
+                        or relative_path in configured.parents
+                        or (
+                            (source_base_dir / configured).is_dir()
+                            and configured in relative_path.parents
+                        )
+                        for configured in configured_entries
+                    )
+                    if not keep and (candidate.exists() or candidate.is_symlink()):
+                        log(f'Removing "{dot.name}:{relative_path}"...')
                         result = delete(
-                            path=profile_dir / dot.name / entry.name,
+                            path=candidate,
                             skip_sudo=props.skip_sudo,
                             sudo_pass=props.password,
                         )
-                        # Updated props
                         if result is not None:
                             skip_sudo, sudo_pass = result
                             if skip_sudo is not None:

@@ -9,5 +9,5 @@ def new_line():
 
 def log(msg, *args, **kwargs):
     prefix = f"{__APP_NAME__}: "
-    cleaned_msg = msg.removeprefix(prefix).capitalize()
+    cleaned_msg = msg.removeprefix(prefix)
     print(f"{prefix}{cleaned_msg}", *args, **kwargs)

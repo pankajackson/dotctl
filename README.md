@@ -316,6 +316,9 @@ This diagram shows the typical lifecycle of using a `dotctl` profile, from savin
 pip install dotctl
 ```
 
+Profile operations require the `git` command. Commands that copy files also require
+`rsync`. Restricted paths prompt for a sudo password when needed.
+
 ---
 
 ## 📘 Usage
@@ -368,9 +371,11 @@ dotctl save [-h] [-p <password>] [--skip-sudo] [--prune] [profile]
 ```sh
 dotctl save
 dotctl save my_web_server --skip-sudo
-dotctl save my_web_server -p mYsecretp@ssw0rd
 dotctl save --prune
 ```
+
+Prefer the interactive sudo prompt over passing a password with `-p`, since command-line
+arguments can be recorded in shell history or visible to other local processes.
 
 > Tip: Use --prune to clean files that were saved before but are no longer listed in the config.
 
