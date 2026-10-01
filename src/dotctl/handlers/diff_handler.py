@@ -17,9 +17,19 @@ def get_file_diff(source: Path, dest: Path) -> list[str] | None:
         dest_files = _directory_files(dest)
         diffs: list[str] = []
         for relative_path in sorted(source_files.keys() | dest_files.keys()):
+            source_file = (
+                source_files[relative_path]
+                if relative_path in source_files
+                else source / relative_path
+            )
+            dest_file = (
+                dest_files[relative_path]
+                if relative_path in dest_files
+                else dest / relative_path
+            )
             file_diff = _get_single_file_diff(
-                source_files.get(relative_path, source / relative_path),
-                dest_files.get(relative_path, dest / relative_path),
+                source_file,
+                dest_file,
             )
             if file_diff:
                 diffs.extend(file_diff)
@@ -108,8 +118,16 @@ def render_side_by_side(source, dest):
         source_files = _directory_files(source)
         dest_files = _directory_files(dest)
         for relative_path in sorted(source_files.keys() | dest_files.keys()):
-            source_file = source_files.get(relative_path, source / relative_path)
-            dest_file = dest_files.get(relative_path, dest / relative_path)
+            source_file = (
+                source_files[relative_path]
+                if relative_path in source_files
+                else source / relative_path
+            )
+            dest_file = (
+                dest_files[relative_path]
+                if relative_path in dest_files
+                else dest / relative_path
+            )
             if get_file_diff(source_file, dest_file):
                 console.print(f"\n{relative_path}", style="bold")
                 render_side_by_side(source_file, dest_file)
