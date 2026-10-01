@@ -92,7 +92,11 @@ def exporter(props: ExporterProps) -> None:
                 source = source_base_dir / entry
                 dest = dest_base_dir / entry
                 result = copy(
-                    source, dest, skip_sudo=props.skip_sudo, sudo_pass=props.password
+                    source,
+                    dest,
+                    skip_sudo=props.skip_sudo,
+                    sudo_pass=props.password,
+                    sudo=section.sudo,
                 )
 
                 # Update props based on the result

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+import subprocess
 import sys
 
 from dotctl.paths import app_profile_directory, app_config_file
@@ -74,8 +75,8 @@ def diff(props: DiffProps) -> None:
                     source = source_root / relative_target
                     repo_file = repo_root / relative_target
             try:
-                diff_lines = get_file_diff(source, repo_file)
-            except PermissionError:
+                diff_lines = get_file_diff(source, repo_file, sudo=section.sudo)
+            except (PermissionError, subprocess.CalledProcessError):
                 inaccessible_paths.append(source)
                 log(f"⚠ Cannot read {source}; permission denied. Skipping this entry.")
                 continue
@@ -86,8 +87,8 @@ def diff(props: DiffProps) -> None:
                 print(f"\n🔍 Diff: {name}/{entry}")
                 if props.side_by_side:
                     try:
-                        render_side_by_side(source, repo_file)
-                    except PermissionError:
+                        render_side_by_side(source, repo_file, sudo=section.sudo)
+                    except (PermissionError, subprocess.CalledProcessError):
                         inaccessible_paths.append(source)
                         log(f"⚠ Cannot read {source}; permission denied.")
 

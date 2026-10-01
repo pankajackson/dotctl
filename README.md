@@ -95,6 +95,11 @@ To simplify path definitions, these keys can be used in `location`:
 
 Use them to make profiles portable across systems.
 
+Each `save` or `export` section may set `sudo: true` when its configured
+location should be accessed through sudo. If `sudo` is omitted or `false`,
+dotctl first uses normal access and asks for sudo only if the path is restricted.
+At the prompt, you can provide a password or skip the current path/all paths.
+
 ---
 
 ### ✅ Example: Minimal Config
@@ -213,6 +218,7 @@ export:
 
   sddm:
     location: $SYS_SHARE_DIR/sddm
+    sudo: true
     entries:
       - themes
 ```
