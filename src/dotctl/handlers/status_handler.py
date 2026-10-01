@@ -66,6 +66,7 @@ class FileState(Enum):
     MISSING_SOURCE = "missing_source"
     MISSING_PROFILE = "missing_profile"
     NOT_PRESENT = "not_present"
+    INACCESSIBLE = "inaccessible"
 
 
 @dataclass
@@ -82,9 +83,14 @@ class DriftReport:
     missing_files: list[StatusEntry] = field(default_factory=list)
     synced_files: list[StatusEntry] = field(default_factory=list)
     not_present_files: list[StatusEntry] = field(default_factory=list)
+    inaccessible_files: list[StatusEntry] = field(default_factory=list)
 
     def total_drift(self) -> int:
-        return len(self.modified_files) + len(self.missing_files)
+        return (
+            len(self.modified_files)
+            + len(self.missing_files)
+            + len(self.inaccessible_files)
+        )
 
     def total_files(self) -> int:
         return (
@@ -92,6 +98,7 @@ class DriftReport:
             + len(self.missing_files)
             + len(self.synced_files)
             + len(self.not_present_files)
+            + len(self.inaccessible_files)
         )
 
     def is_clean(self) -> bool:
@@ -99,9 +106,11 @@ class DriftReport:
 
 
 def get_file_state(source: Path, repo_file: Path) -> FileState:
+    source_exists = _path_presence(source)
+    repo_exists = _path_presence(repo_file)
 
-    source_exists = source.exists()
-    repo_exists = repo_file.exists()
+    if source_exists is None or repo_exists is None:
+        return FileState.INACCESSIBLE
 
     if not source_exists and repo_exists:
         return FileState.MISSING_SOURCE
@@ -112,12 +121,26 @@ def get_file_state(source: Path, repo_file: Path) -> FileState:
     if not source_exists and not repo_exists:
         return FileState.NOT_PRESENT
 
-    diff = get_file_diff(source, repo_file)
+    try:
+        diff = get_file_diff(source, repo_file)
+    except PermissionError:
+        return FileState.INACCESSIBLE
 
     if diff:
         return FileState.MODIFIED
 
     return FileState.SYNCED
+
+
+def _path_presence(path: Path) -> bool | None:
+    """Return presence including dangling symlinks, or None if inaccessible."""
+    try:
+        path.lstat()
+        return True
+    except FileNotFoundError:
+        return False
+    except PermissionError:
+        return None
 
 
 def build_drift_report(profile_dir: Path, config: Config) -> DriftReport:
@@ -146,6 +169,7 @@ def build_drift_report(profile_dir: Path, config: Config) -> DriftReport:
     missing = []
     synced = []
     not_present = []
+    inaccessible = []
 
     for r in results:
 
@@ -158,6 +182,9 @@ def build_drift_report(profile_dir: Path, config: Config) -> DriftReport:
         elif r.state == FileState.NOT_PRESENT:
             not_present.append(r)
 
+        elif r.state == FileState.INACCESSIBLE:
+            inaccessible.append(r)
+
         else:
             synced.append(r)
     return DriftReport(
@@ -165,4 +192,5 @@ def build_drift_report(profile_dir: Path, config: Config) -> DriftReport:
         missing_files=missing,
         synced_files=synced,
         not_present_files=not_present,
+        inaccessible_files=inaccessible,
     )

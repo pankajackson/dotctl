@@ -122,9 +122,18 @@ def render_full(report: StatusReport):
     else:
         print("✔ missing entries: none")
 
+    if drift.inaccessible_files:
+        print(f"⚠ inaccessible entries: {len(drift.inaccessible_files)}")
+    else:
+        print("✔ inaccessible entries: none")
+
     print(f"ℹ not present at either location: {len(drift.not_present_files)}")
 
-    changed = drift.modified_files + drift.missing_files
+    changed = (
+        drift.modified_files
+        + drift.missing_files
+        + drift.inaccessible_files
+    )
 
     if changed:
 
@@ -176,6 +185,7 @@ def render_short(report: StatusReport):
     print(
         f"modified={len(drift.modified_files)} "
         f"missing={len(drift.missing_files)} "
+        f"inaccessible={len(drift.inaccessible_files)} "
         f"synced={len(drift.synced_files)} "
         f"not_present={len(drift.not_present_files)}"
     )
@@ -230,6 +240,9 @@ def render_json(report: StatusReport):
             "synced_files": [encode_file(f) for f in drift.synced_files],
             "not_present_files": [
                 encode_file(f) for f in drift.not_present_files
+            ],
+            "inaccessible_files": [
+                encode_file(f) for f in drift.inaccessible_files
             ],
         }
 

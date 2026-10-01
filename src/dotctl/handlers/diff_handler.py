@@ -1,5 +1,6 @@
 from pathlib import Path
 from difflib import unified_diff, SequenceMatcher
+import os
 from rich.console import Console
 from rich.table import Table
 
@@ -7,8 +8,11 @@ console = Console()
 
 
 def get_file_diff(source: Path, dest: Path) -> list[str] | None:
-    if not source.exists() and not dest.exists():
+    if not _path_exists(source) and not _path_exists(dest):
         return None
+
+    if source.is_symlink() or dest.is_symlink():
+        return _get_single_file_diff(source, dest)
 
     # Configured entries may be directories. Compare their files by relative
     # path so additions and removals are reported as well as content changes.
@@ -44,22 +48,33 @@ def _directory_files(directory: Path) -> dict[Path, Path]:
     return {
         path.relative_to(directory): path
         for path in directory.rglob("*")
-        if path.is_file()
+        if path.is_file() or path.is_symlink()
     }
 
 
+def _path_exists(path: Path) -> bool:
+    try:
+        path.lstat()
+        return True
+    except FileNotFoundError:
+        return False
+
+
+def _read_lines(path: Path, keepends: bool = True) -> list[str]:
+    if path.is_symlink():
+        suffix = "\n" if keepends else ""
+        return [f"symlink -> {os.readlink(path)}{suffix}"]
+    if path.is_file():
+        return path.read_text().splitlines(keepends=keepends)
+    return []
+
+
 def _get_single_file_diff(source: Path, dest: Path) -> list[str] | None:
-    if not source.exists() and not dest.exists():
+    if not _path_exists(source) and not _path_exists(dest):
         return None
 
-    source_lines = []
-    dest_lines = []
-
-    if source.exists() and source.is_file():
-        source_lines = source.read_text().splitlines(keepends=True)
-
-    if dest.exists() and dest.is_file():
-        dest_lines = dest.read_text().splitlines(keepends=True)
+    source_lines = _read_lines(source)
+    dest_lines = _read_lines(dest)
 
     diff = list(
         unified_diff(
@@ -142,14 +157,8 @@ def render_side_by_side(source, dest):
                 render_side_by_side(source_file, dest_file)
         return
 
-    source_lines = []
-    dest_lines = []
-
-    if source.exists() and source.is_file():
-        source_lines = source.read_text().splitlines()
-
-    if dest.exists() and dest.is_file():
-        dest_lines = dest.read_text().splitlines()
+    source_lines = _read_lines(source, keepends=False)
+    dest_lines = _read_lines(dest, keepends=False)
 
     matcher = SequenceMatcher(None, dest_lines, source_lines)
 
