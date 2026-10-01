@@ -51,15 +51,27 @@ def diff(props: DiffProps) -> None:
 
         for entry in section.entries:
 
-            source = source_base_dir / entry
-            repo_file = repo_base_dir / entry
+            source_root = source_base_dir / entry
+            repo_root = repo_base_dir / entry
+            source = source_root
+            repo_file = repo_root
             if target_path is not None:
                 if not is_target_match(
                     target=target_path,
-                    source=source,
-                    repo_file=repo_file,
+                    source=source_root,
+                    repo_file=repo_root,
                 ):
                     continue
+                resolved_source = source_root.resolve()
+                resolved_repo = repo_root.resolve()
+                if target_path != resolved_source and resolved_source in target_path.parents:
+                    relative_target = target_path.relative_to(resolved_source)
+                    source = source_root / relative_target
+                    repo_file = repo_root / relative_target
+                elif target_path != resolved_repo and resolved_repo in target_path.parents:
+                    relative_target = target_path.relative_to(resolved_repo)
+                    source = source_root / relative_target
+                    repo_file = repo_root / relative_target
             diff_lines = get_file_diff(source, repo_file)
 
             if diff_lines:

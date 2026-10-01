@@ -5,7 +5,6 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from dotctl import __BASE_DIR__
-from dotctl.exception import exception_handler
 from dotctl.paths import (
     home_path,
     config_directory,
@@ -75,7 +74,6 @@ def parse_keywords(tokens_: dict, token_symbol: str, config: dict):
                     config[item][name]["location"] = location.replace(word, value)
 
 
-@exception_handler
 def conf_reader(config_file: Path = Path(app_config_file)) -> Config:
     with open(config_file, "r") as text:
         config = yaml.load(text.read(), Loader=yaml.SafeLoader)

@@ -1,8 +1,6 @@
 from enum import Enum
-from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-import json
 
 from dotctl.handlers.config_handler import Config
 from dotctl.handlers.diff_handler import get_file_diff
@@ -67,6 +65,7 @@ class FileState(Enum):
     MODIFIED = "modified"
     MISSING_SOURCE = "missing_source"
     MISSING_PROFILE = "missing_profile"
+    NOT_PRESENT = "not_present"
 
 
 @dataclass
@@ -82,13 +81,17 @@ class DriftReport:
     modified_files: list[StatusEntry] = field(default_factory=list)
     missing_files: list[StatusEntry] = field(default_factory=list)
     synced_files: list[StatusEntry] = field(default_factory=list)
+    not_present_files: list[StatusEntry] = field(default_factory=list)
 
     def total_drift(self) -> int:
         return len(self.modified_files) + len(self.missing_files)
 
     def total_files(self) -> int:
         return (
-            len(self.modified_files) + len(self.missing_files) + len(self.synced_files)
+            len(self.modified_files)
+            + len(self.missing_files)
+            + len(self.synced_files)
+            + len(self.not_present_files)
         )
 
     def is_clean(self) -> bool:
@@ -107,7 +110,7 @@ def get_file_state(source: Path, repo_file: Path) -> FileState:
         return FileState.MISSING_PROFILE
 
     if not source_exists and not repo_exists:
-        return FileState.SYNCED  # edge case safe ignore
+        return FileState.NOT_PRESENT
 
     diff = get_file_diff(source, repo_file)
 
@@ -142,6 +145,7 @@ def build_drift_report(profile_dir: Path, config: Config) -> DriftReport:
     modified = []
     missing = []
     synced = []
+    not_present = []
 
     for r in results:
 
@@ -151,12 +155,14 @@ def build_drift_report(profile_dir: Path, config: Config) -> DriftReport:
         elif r.state in (FileState.MISSING_SOURCE, FileState.MISSING_PROFILE):
             missing.append(r)
 
+        elif r.state == FileState.NOT_PRESENT:
+            not_present.append(r)
+
         else:
             synced.append(r)
-    repo_clean = len(modified) == 0 and len(missing) == 0
-
     return DriftReport(
         modified_files=modified,
         missing_files=missing,
         synced_files=synced,
+        not_present_files=not_present,
     )

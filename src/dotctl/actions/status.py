@@ -51,6 +51,8 @@ class StatusReport:
     profile: ProfileInfo
     config: ConfigInfo
     drift: DriftReport | None
+    drift_error: str | None = None
+    errors: list[str] = field(default_factory=list)
     # symlink: CheckResult
     # permissions: CheckResult
     # hooks: CheckResult
@@ -83,6 +85,8 @@ def render_full(report: StatusReport):
 
     print(f"{status_icon(profile.health.healthy)} profile: {profile.health.message}")
     print(f"{status_icon(config.health.healthy)} config: {config.health.message}")
+    for error in report.errors:
+        print(f"⚠ {error}")
 
     if profile.active_profile:
         print(f"ℹ active profile: {profile.active_profile}")
@@ -91,7 +95,8 @@ def render_full(report: StatusReport):
         print(f"ℹ remote: {profile.remote_url}")
 
     if not report.can_analyze_drift():
-        print("\n⚠ drift analysis unavailable")
+        detail = f": {report.drift_error}" if report.drift_error else ""
+        print(f"\n⚠ drift analysis unavailable{detail}")
         return
 
     drift = report.drift
@@ -105,17 +110,19 @@ def render_full(report: StatusReport):
     else:
         print("⚠ system: drift detected")
 
-    print(f"✔ synced files: {len(drift.synced_files)}")
+    print(f"✔ synced entries: {len(drift.synced_files)}")
 
     if drift.modified_files:
-        print(f"⚠ modified files: {len(drift.modified_files)}")
+        print(f"⚠ modified entries: {len(drift.modified_files)}")
     else:
-        print("✔ modified files: none")
+        print("✔ modified entries: none")
 
     if drift.missing_files:
-        print(f"⚠ missing files: {len(drift.missing_files)}")
+        print(f"⚠ missing entries: {len(drift.missing_files)}")
     else:
-        print("✔ missing files: none")
+        print("✔ missing entries: none")
+
+    print(f"ℹ not present at either location: {len(drift.not_present_files)}")
 
     changed = drift.modified_files + drift.missing_files
 
@@ -123,7 +130,7 @@ def render_full(report: StatusReport):
 
         grouped = Counter(f.state.value for f in changed)
 
-        print("\nChanged files:")
+        print("\nChanged entries:")
 
         for f in changed:
             print(f"  - {f.path}")
@@ -147,24 +154,30 @@ def render_short(report: StatusReport):
         print(f"config: {config.health.message}")
         return
 
+    for error in report.errors:
+        print(f"warning: {error}")
+
     if not report.can_analyze_drift():
-        print("drift: unavailable")
+        detail = f" ({report.drift_error})" if report.drift_error else ""
+        print(f"drift: unavailable{detail}")
         return
 
     drift = report.drift
 
     if drift is None:
-        print("drift: unavailable")
+        detail = f" ({report.drift_error})" if report.drift_error else ""
+        print(f"drift: unavailable{detail}")
         return
 
     if drift.is_clean():
-        print("✔ clean")
+        print(f"✔ clean (not present: {len(drift.not_present_files)})")
         return
 
     print(
         f"modified={len(drift.modified_files)} "
         f"missing={len(drift.missing_files)} "
-        f"synced={len(drift.synced_files)}"
+        f"synced={len(drift.synced_files)} "
+        f"not_present={len(drift.not_present_files)}"
     )
 
 
@@ -200,6 +213,8 @@ def render_json(report: StatusReport):
             "health": encode_health(report.config.health),
         },
         "drift": None,
+        "drift_error": report.drift_error,
+        "errors": report.errors,
     }
 
     if report.drift:
@@ -208,10 +223,14 @@ def render_json(report: StatusReport):
 
         output["drift"] = {
             "clean": drift.is_clean(),
+            "total_entries": drift.total_files(),
             "total_files": drift.total_files(),
             "modified_files": [encode_file(f) for f in drift.modified_files],
             "missing_files": [encode_file(f) for f in drift.missing_files],
             "synced_files": [encode_file(f) for f in drift.synced_files],
+            "not_present_files": [
+                encode_file(f) for f in drift.not_present_files
+            ],
         }
 
     print(json.dumps(output, indent=2))
@@ -379,6 +398,7 @@ def status(props: StatusProps) -> None:
     config_info, config = collect_config_info(errors)
 
     drift_report = None
+    drift_error = None
 
     try:
         if profile_info.health.healthy and config_info.health.healthy and config:
@@ -390,17 +410,19 @@ def status(props: StatusProps) -> None:
 
     except Exception as e:
         errors.append(f"Drift check failed: {e}")
+        drift_error = str(e)
 
     report = StatusReport(
         profile=profile_info,
         config=config_info,
         drift=drift_report,
+        drift_error=drift_error,
+        errors=errors,
     )
 
     if props.json:
         render_json(report)
     elif props.short:
-        log("Fetching status...")
         render_short(report)
     else:
         log("Fetching status...")

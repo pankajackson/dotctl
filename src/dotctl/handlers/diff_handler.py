@@ -83,8 +83,17 @@ def is_target_match(
 
     try:
         target = target.resolve()
+        source = source.resolve()
+        repo_file = repo_file.resolve()
 
-        return source.resolve() == target or repo_file.resolve() == target
+        return (
+            source == target
+            or repo_file == target
+            or source in target.parents
+            or repo_file in target.parents
+            or target in source.parents
+            or target in repo_file.parents
+        )
 
     except Exception:
         return False

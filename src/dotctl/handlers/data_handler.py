@@ -1,7 +1,6 @@
 import subprocess
 import getpass
 from pathlib import Path
-from dotctl.exception import exception_handler
 from dotctl.utils import log
 
 
@@ -26,7 +25,7 @@ def rsync(
     ]
 
     if sudo_pass:
-        command = ["sshpass", "-p", sudo_pass, "sudo"] + command
+        command = ["sudo", "-S", "-p", ""] + command
 
     process = subprocess.Popen(
         command,
@@ -36,7 +35,9 @@ def rsync(
         text=True,
     )
 
-    stdout, stderr = process.communicate()
+    stdout, stderr = process.communicate(
+        input=f"{sudo_pass}\n" if sudo_pass else None
+    )
 
     if process.returncode != 0:
         log(f"rsync failed: {stderr.strip()}")
@@ -55,7 +56,7 @@ def remove_file_or_dir(
 ):
     command = ["rm", "-rf", str(location)]
     if sudo_pass:
-        command = ["sshpass", "-p", sudo_pass, "sudo"] + command
+        command = ["sudo", "-S", "-p", ""] + command
 
     process = subprocess.Popen(
         command,
@@ -65,7 +66,9 @@ def remove_file_or_dir(
         text=True,
     )
 
-    stdout, stderr = process.communicate()
+    stdout, stderr = process.communicate(
+        input=f"{sudo_pass}\n" if sudo_pass else None
+    )
 
     if process.returncode != 0:
         log(f"cleanup failed: {stderr.strip()}")
@@ -119,14 +122,20 @@ def get_sudo_pass(path: Path, sudo_max_attempts: int = 3):
     )
 
 
-def run_command(command: str, sudo_pass: str | None = None):
-    """Runs a shell command and returns success status, output, and exit code."""
+def run_command(command: list[str], sudo_pass: str | None = None):
+    """Runs a command without a shell and returns its output and exit code."""
+    stdin = None
     if sudo_pass:
-        command = f"echo {sudo_pass} | sudo -S {command}"
+        command = ["sudo", "-S", "-p", "", *command]
+        stdin = f"{sudo_pass}\n"
 
     try:
         result = subprocess.run(
-            command, shell=True, check=True, text=True, capture_output=True
+            command,
+            input=stdin,
+            check=True,
+            text=True,
+            capture_output=True,
         )
         return True, result.stdout.strip(), result.returncode  # Success
     except subprocess.CalledProcessError as e:
@@ -157,7 +166,9 @@ def delete(path: Path, skip_sudo=False, sudo_pass: str | None = None):
         else:
             if not temp_pass and not sudo_pass:
                 temp_pass, sudo_pass, skip_sudo = get_sudo_pass(path)
-            success, _, _ = run_command(f"ls {path}", temp_pass or sudo_pass)
+            success, _, _ = run_command(
+                ["ls", "-ld", str(path)], temp_pass or sudo_pass
+            )
             target_exists = success
 
     if target_exists:
@@ -171,7 +182,6 @@ def delete(path: Path, skip_sudo=False, sudo_pass: str | None = None):
                     remove_file_or_dir(path, temp_pass or sudo_pass)
 
 
-@exception_handler
 def copy(source: Path, dest: Path, skip_sudo=False, sudo_pass=None, prune=False):
     """Copies files/directories using rsync and handles sudo permission issues."""
     temp_pass = None
@@ -188,9 +198,13 @@ def copy(source: Path, dest: Path, skip_sudo=False, sudo_pass=None, prune=False)
         else:
             if not temp_pass and not sudo_pass:
                 temp_pass, sudo_pass, skip_sudo = get_sudo_pass(source)
-            success, _, _ = run_command(f"ls {source}", temp_pass or sudo_pass)
+            success, _, _ = run_command(
+                ["ls", "-ld", str(source)], temp_pass or sudo_pass
+            )
             source_exists = success
-            _, _, exit_code = run_command(f"test -d {source}", temp_pass or sudo_pass)
+            _, _, exit_code = run_command(
+                ["test", "-d", str(source)], temp_pass or sudo_pass
+            )
             is_dir = exit_code == 0
     if source_exists:
         try:

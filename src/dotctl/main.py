@@ -1,7 +1,7 @@
 from enum import Enum
 from pathlib import Path
 from dataclasses import replace
-from dotctl import __APP_NAME__, __APP_VERSION__
+from dotctl import __APP_NAME__, __APP_VERSION__, __COMMANDS_REQ__
 from .arg_manager import get_parser
 from .exception import exception_handler, check_req_commands
 from .actions.initializer import initialise, initializer_default_props
@@ -180,7 +180,18 @@ def main():
         parser.print_help()
         return
 
-    check_req_commands()
+    required_commands = list(__COMMANDS_REQ__)
+    if args.action in {
+        "init",
+        "create",
+        "new",
+        "save",
+        "apply",
+        "export",
+        "import",
+    }:
+        required_commands.append("rsync")
+    check_req_commands(required_commands)
 
     try:
         action = Action(args.action.lower())
