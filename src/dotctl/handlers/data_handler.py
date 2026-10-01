@@ -209,6 +209,31 @@ def copy(source: Path, dest: Path, skip_sudo=False, sudo_pass=None, prune=False)
     if source_exists:
         try:
             assert source != dest, "Source and destination can't be the same"
+
+            try:
+                dest.parent.mkdir(parents=True, exist_ok=True)
+            except PermissionError:
+                if skip_sudo:
+                    log(f"PermissionError: skipping destination {dest.parent}")
+                    return skip_sudo, sudo_pass
+
+                if not temp_pass and not sudo_pass:
+                    temp_pass, sudo_pass, skip_sudo = get_sudo_pass(dest.parent)
+
+                parent_pass = temp_pass or sudo_pass
+                if not parent_pass:
+                    return skip_sudo, sudo_pass
+
+                success, stderr, exit_code = run_command(
+                    ["mkdir", "-p", str(dest.parent)], parent_pass
+                )
+                if not success:
+                    raise subprocess.CalledProcessError(
+                        exit_code,
+                        ["sudo", "-S", "-p", "", "mkdir", "-p", str(dest.parent)],
+                        stderr,
+                    )
+
             rsync(source, dest, temp_pass or sudo_pass, is_dir=is_dir)
         except PermissionError:
             log(f"PermissionError: {source} requires sudo access.")
