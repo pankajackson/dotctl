@@ -1,32 +1,27 @@
 # Changelog
 
-## v1.1.0 - 2026-05-23
+## v1.1.0 - 2026-10-02
 
 **Features**:
 
-- Added `status` command
-- Added drift detection support
-- Added `diff` command
-- Added side-by-side diff rendering
-- Added colored diff output
-- Added short status rendering
-- Added structured status report model
+- Added `status` with drift detection and structured status reports
+- Added `diff`, including recursive directory diffs, side-by-side rendering, and colored output
+- Added `required_sudo` support for configured paths across save, apply, export, import, status, and diff operations
+- Added named-profile saves: existing targets are saved and the original profile is restored afterward
+- New names passed to `save` start as copies of the active profile; unpublished branches are pushed even when no file changes are detected
+- `create` / `new` now creates a fresh profile and initializes its config and hooks
 
 **Fixes**:
 
-- Fixed incorrect file existence detection for permission-restricted files (`Path.exists()` was not sufficient)
-- Improved file stat handling using `os.stat()` / permission-aware checks in status and diff operations
+- Fixed permission-aware file existence and metadata checks for restricted paths
+- Improved sudo fallback handling, including passwordless sudo and skipped paths
+- Fixed saving files into new destination directories and updating destination ownership
+- Fixed profile branch publication when a save produces no file changes
 
 **UX Improvements**:
 
-- Improved CLI icons and symbols
-- Improved human-readable status output
-- Added cleaner sync/drift reporting
-
-**Known Limitations**:
-
-- `sudo` handling currently only applies to the `save` command
-- Some commands may still show limited metadata for restricted files depending on system permissions
+- Clarified save results when entries are skipped or a profile has no changes
+- Improved human-readable status, diff, and profile synchronization messages
 
 ## v1.0.9 - 2025-06-25
 
