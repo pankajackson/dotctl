@@ -163,29 +163,34 @@ def _save_current_profile(
                                 props.password = sudo_pass
 
     add_changes(repo=repo)
-    if is_repo_changed(repo=repo):
+    has_changes = is_repo_changed(repo=repo)
+    if has_changes:
         hostname = socket.gethostname()
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         full_message = f"{hostname} | {timestamp}"
         commit_changes(repo=repo, message=full_message)
-        is_remote, _ = is_remote_repo(repo=repo)
-        if is_remote:
-            git_fetch(repo=repo)
-            _, remote_profiles, _, _ = get_repo_branches(repo)
-            if target_profile not in remote_profiles:
-                push_new_branch(repo=repo)
-            else:
-                push_existing_branch(repo=repo)
-        if skipped_paths:
+
+    pushed_new_profile = False
+    is_remote, _ = is_remote_repo(repo=repo)
+    if is_remote:
+        git_fetch(repo=repo)
+        _, remote_profiles, _, _ = get_repo_branches(repo)
+        if target_profile not in remote_profiles:
+            push_new_branch(repo=repo)
+            pushed_new_profile = True
+        elif has_changes:
+            push_existing_branch(repo=repo)
+
+    if skipped_paths:
+        if pushed_new_profile:
+            log("⚠ New profile pushed with skipped entries:")
+        else:
             log("⚠ Profile save completed with skipped entries:")
-            for path in skipped_paths:
-                log(f"  - {path}")
-        else:
-            log("✅ Profile saved successfully!")
+        for path in skipped_paths:
+            log(f"  - {path}")
+    elif has_changes:
+        log("✅ Profile saved successfully!")
+    elif pushed_new_profile:
+        log("✅ New profile pushed to remote; no file changes detected.")
     else:
-        if skipped_paths:
-            log("⚠ No changes saved for skipped entries:")
-            for path in skipped_paths:
-                log(f"  - {path}")
-        else:
-            log("ℹ️ No changes detected!")
+        log("ℹ️ No changes detected!")
