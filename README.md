@@ -32,9 +32,12 @@ Designed for developers and sysadmins, it supports pre/post hook scripts and is 
     - [❌ `remove` / `rm` / `delete` / `del`](#-remove--rm--delete--del)
     - [🧪 `apply`](#-apply)
     - [🔄 `pull`](#-pull)
+    - [🔍 `status`](#-status)
+    - [🔎 `diff`](#-diff)
     - [📤 `export`](#-export)
     - [📥 `import`](#-import)
     - [🔥 `wipe`](#-wipe)
+  - [⚠️ Limitations \& Notes](#️-limitations--notes)
   - [🧑‍💻 Development \& Publishing](#-development--publishing)
     - [Setup Development Environment](#setup-development-environment)
     - [Test the new code](#test-the-new-code)
@@ -58,7 +61,7 @@ Designed for developers and sysadmins, it supports pre/post hook scripts and is 
 
 ## 📁 Profile Config Structure (`dotctl.yaml`)
 
-The `dotctl.yml` config file defines what files and directories to **track**, **save**, and **export** as part of a system profile. This enables seamless migration, sharing, and restoration of system configs and personalizations—perfect for dotfiles, apps, or entire setups like KDE.
+The `dotctl.yaml` config file defines what files and directories to **track**, **save**, and **export** as part of a system profile. This enables seamless migration, sharing, and restoration of system configs and personalizations—perfect for dotfiles, apps, or entire setups like KDE.
 
 ### 🧠 Concept Overview
 
@@ -91,6 +94,11 @@ To simplify path definitions, these keys can be used in `location`:
 | `$SYS_CONFIG_DIR` | `/etc`           |
 
 Use them to make profiles portable across systems.
+
+Each `save` or `export` section may set `required_sudo: true` when its configured
+location should be accessed through sudo. If `sudo` is omitted or `false`,
+dotctl first uses normal access and asks for sudo only if the path is restricted.
+At the prompt, you can provide a password or skip the current path/all paths.
 
 ---
 
@@ -210,6 +218,7 @@ export:
 
   sddm:
     location: $SYS_SHARE_DIR/sddm
+    required_sudo: true
     entries:
       - themes
 ```
@@ -234,7 +243,7 @@ This diagram shows the typical lifecycle of using a `dotctl` profile, from savin
 
 ```js
             ┌──────────────┐
-            │  dotctl.yml  │
+            │ dotctl.yaml  │
             └──────┬───────┘
                    │
          ┌─────────▼──────────┐
@@ -286,12 +295,14 @@ This diagram shows the typical lifecycle of using a `dotctl` profile, from savin
 
 ## 📊 Profile Block Table
 
-| Section  | Field      | Description                                                       |
-| -------- | ---------- | ----------------------------------------------------------------- |
-| `save`   | `location` | Base path of the tracked files (can use key like `$CONFIG_DIR`)   |
-|          | `entries`  | List of files/folders to track under that location                |
-| `export` | `location` | Base path of export files (e.g., large assets not suited for Git) |
-|          | `entries`  | List of assets or binaries to package in `.dtsv`                  |
+| Section  | Field           | Description                                                       |
+| -------- | --------------- | ----------------------------------------------------------------- |
+| `save`   | `location`      | Base path of tracked files (can use a key like `$CONFIG_DIR`)     |
+|          | `entries`       | Files/folders to track under that location                        |
+|          | `required_sudo` | Whether restricted paths in this section require sudo             |
+| `export` | `location`      | Base path of export files (e.g., large assets not suited for Git) |
+|          | `entries`       | Assets or binaries to package in `.dtsv`                           |
+|          | `required_sudo` | Whether restricted paths in this section require sudo             |
 
 ---
 
@@ -299,7 +310,7 @@ This diagram shows the typical lifecycle of using a `dotctl` profile, from savin
 
 | Action          | Command                | Description                                                 |
 | --------------- | ---------------------- | ----------------------------------------------------------- |
-| Save configs    | `dotctl save`          | Pulls files defined in `save` and stores in repo            |
+| Save configs    | `dotctl save`          | Saves configured files to the active profile and syncs Git   |
 | Export assets   | `dotctl export`        | Package large, non-Git assets into `.dtsv` file             |
 | Transfer assets | `scp profile.dtsv ...` | Manually copy to another machine                            |
 | Import assets   | `dotctl import`        | Unpack `.dtsv` on another system                            |
@@ -312,6 +323,9 @@ This diagram shows the typical lifecycle of using a `dotctl` profile, from savin
 ```sh
 pip install dotctl
 ```
+
+Profile operations require the `git` command. Commands that copy files also require
+`rsync`. Restricted paths prompt for a sudo password when needed.
 
 ---
 
@@ -354,7 +368,7 @@ dotctl init -c ./my_custom_config.yaml
 
 ### 💾 `save`
 
-Save current system state to the active profile.
+Save current system state to a profile.
 
 ```sh
 dotctl save [-h] [-p <password>] [--skip-sudo] [--prune] [profile]
@@ -365,9 +379,19 @@ dotctl save [-h] [-p <password>] [--skip-sudo] [--prune] [profile]
 ```sh
 dotctl save
 dotctl save my_web_server --skip-sudo
-dotctl save my_web_server -p mYsecretp@ssw0rd
 dotctl save --prune
+dotctl save a_new_profile
 ```
+
+Without a profile name, `save` targets the active profile. If the named profile
+already exists, dotctl saves to it and then returns to the previously active
+profile. If it does not exist, dotctl creates it from the active profile, saves
+the current system state there, and returns to the previous profile. When a
+remote is configured, dotctl pushes a target branch that is not on the remote,
+even if the save produced no file changes.
+
+Prefer the interactive sudo prompt over passing a password with `-p`, since command-line
+arguments can be recorded in shell history or visible to other local processes.
 
 > Tip: Use --prune to clean files that were saved before but are no longer listed in the config.
 
@@ -376,7 +400,7 @@ dotctl save --prune
 - `--skip-sudo` – Ignore restricted resources.
 - `-p, --password` – Password for restricted resources.
 - `--prune` – Remove stale files from the dot repo that are no longer listed in the current `dotctl.yaml` config.
-- `profile` – Target profile to save into (defaults to the active one if not provided)
+- `profile` – Target profile. A new name starts as a copy of the active profile; omitted means the active profile.
 
 ---
 
@@ -426,7 +450,8 @@ dotctl sw MyProfile --fetch
 
 ### 🆕 `create` / `new`
 
-Create a new, empty profile.
+Create a new, empty profile and initialize its config and hooks. The new profile
+becomes active.
 
 ```sh
 dotctl create [-h] [--fetch] [-c <path>] [-e <env>] profile
@@ -435,14 +460,14 @@ dotctl create [-h] [--fetch] [-c <path>] [-e <env>] profile
 **Examples:**
 
 ```sh
-# Create a new profile from current active profile.
+# Create a fresh profile using the detected environment or default config.
 dotctl create myserver
 
-# Create a empty new profile from a specific environment.
-dotctl create -e kde
+# Create a fresh profile from a specific environment.
+dotctl create -e kde kde_desktop
 
-# Create a empty new profile from a custom config.
-dotctl create -c ./my_custom_config.yaml
+# Create a fresh profile from a custom config.
+dotctl create -c ./my_custom_config.yaml my_custom_profile
 ```
 
 **Options:**
@@ -521,6 +546,42 @@ dotctl pull
 
 ---
 
+### 🔍 `status`
+
+Inspect the current profile health and detect configuration drift between the repository and local system.
+
+```sh
+dotctl status [--json] [--short]
+```
+
+**Examples:**
+
+```sh
+dotctl status
+dotctl status --short
+dotctl status --json
+```
+
+---
+
+### 🔎 `diff`
+
+Compare tracked files between the repository and local system.
+
+```sh
+dotctl diff [--color] [--side-by-side]
+```
+
+**Examples:**
+
+```sh
+dotctl diff
+dotctl diff --color
+dotctl diff --side-by-side
+```
+
+---
+
 ### 📤 `export`
 
 Export a profile to `.dtsv`.
@@ -582,6 +643,15 @@ dotctl wipe -y
 **Options:**
 
 - `-y, --no-confirm` – Do not prompt before wiping.
+
+---
+
+## ⚠️ Limitations & Notes
+
+- Configured filesystem operations (`save`, `apply`, `export`, `import`, `status`, and `diff`) support sudo access for restricted paths. Set `required_sudo: true` on the relevant config section when sudo access is expected; otherwise dotctl tries normal access and requests sudo if needed.
+- `status` and `diff` can report paths as inaccessible when access is denied or the user skips the sudo request.
+- Ensure tracked files/directories have proper read permissions before adding them to `dotctl.yaml`.
+- Missing or inaccessible files may appear as drift during `status` or `diff` operations.
 
 ---
 

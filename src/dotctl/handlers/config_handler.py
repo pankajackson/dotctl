@@ -5,7 +5,6 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from dotctl import __BASE_DIR__
-from dotctl.exception import exception_handler
 from dotctl.paths import (
     home_path,
     config_directory,
@@ -23,6 +22,7 @@ from dotctl.utils import log
 class EntryConfig:
     entries: list[str]
     location: str
+    required_sudo: bool = False
 
 
 @dataclass
@@ -75,15 +75,37 @@ def parse_keywords(tokens_: dict, token_symbol: str, config: dict):
                     config[item][name]["location"] = location.replace(word, value)
 
 
-@exception_handler
 def conf_reader(config_file: Path = Path(app_config_file)) -> Config:
     with open(config_file, "r") as text:
         config = yaml.load(text.read(), Loader=yaml.SafeLoader)
 
     parse_keywords(tokens, TOKEN_SYMBOL, config)
+
+    def load_section(name: str, values: dict) -> EntryConfig:
+        if not isinstance(values, dict):
+            raise ValueError(f"Config section '{name}' must be a mapping.")
+        required_sudo = values.get("required_sudo", False)
+        if not isinstance(required_sudo, bool):
+            raise ValueError(
+                f"Config section '{name}'.required_sudo must be true or false."
+            )
+        entries = values.get("entries")
+        if not isinstance(entries, list) or not all(
+            isinstance(entry, str) for entry in entries
+        ):
+            raise ValueError(
+                f"Config section '{name}'.entries must be a list of paths."
+            )
+        location = values.get("location")
+        if not isinstance(location, str):
+            raise ValueError(f"Config section '{name}'.location must be a path.")
+        return EntryConfig(
+            entries=entries, location=location, required_sudo=required_sudo
+        )
+
     return Config(
-        save={k: EntryConfig(**v) for k, v in config["save"].items()},
-        export={k: EntryConfig(**v) for k, v in config["export"].items()},
+        save={k: load_section(k, v) for k, v in config["save"].items()},
+        export={k: load_section(k, v) for k, v in config["export"].items()},
     )
 
 

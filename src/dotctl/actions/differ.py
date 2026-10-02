@@ -1,0 +1,108 @@
+from dataclasses import dataclass
+from pathlib import Path
+import subprocess
+import sys
+
+from dotctl.paths import app_profile_directory, app_config_file
+from dotctl.handlers.config_handler import conf_reader
+from dotctl.handlers.diff_handler import (
+    get_file_diff,
+    render_side_by_side,
+    render_colored_diff,
+    is_target_match,
+)
+from dotctl.handlers.git_handler import get_repo
+from dotctl.utils import log
+
+
+@dataclass
+class DiffProps:
+    profile_dir: Path
+    target: str | None
+    color: bool
+    side_by_side: bool
+
+
+differ_default_props = DiffProps(
+    profile_dir=Path(app_profile_directory),
+    target=None,
+    color=False,
+    side_by_side=False,
+)
+
+
+def diff(props: DiffProps) -> None:
+    log("Fetching diffs...")
+    repo = get_repo(props.profile_dir)
+
+    if repo.bare:
+        log("❌ The repository is bare. No Profile available.")
+        sys.exit(1)
+
+    config = conf_reader(config_file=Path(app_config_file))
+
+    changes_found = False
+    inaccessible_paths: list[Path] = []
+
+    target_path = Path(props.target).expanduser().resolve() if props.target else None
+
+    for name, section in config.save.items():
+
+        source_base_dir = Path(section.location)
+        repo_base_dir = props.profile_dir / name
+
+        for entry in section.entries:
+
+            source_root = source_base_dir / entry
+            repo_root = repo_base_dir / entry
+            source = source_root
+            repo_file = repo_root
+            if target_path is not None:
+                if not is_target_match(
+                    target=target_path,
+                    source=source_root,
+                    repo_file=repo_root,
+                ):
+                    continue
+                resolved_source = source_root.resolve()
+                resolved_repo = repo_root.resolve()
+                if target_path != resolved_source and resolved_source in target_path.parents:
+                    relative_target = target_path.relative_to(resolved_source)
+                    source = source_root / relative_target
+                    repo_file = repo_root / relative_target
+                elif target_path != resolved_repo and resolved_repo in target_path.parents:
+                    relative_target = target_path.relative_to(resolved_repo)
+                    source = source_root / relative_target
+                    repo_file = repo_root / relative_target
+            try:
+                diff_lines = get_file_diff(
+                    source, repo_file, required_sudo=section.required_sudo
+                )
+            except (PermissionError, subprocess.CalledProcessError):
+                inaccessible_paths.append(source)
+                log(f"⚠ Cannot read {source}; permission denied. Skipping this entry.")
+                continue
+
+            if diff_lines:
+                changes_found = True
+
+                print(f"\n🔍 Diff: {name}/{entry}")
+                if props.side_by_side:
+                    try:
+                        render_side_by_side(
+                            source,
+                            repo_file,
+                            required_sudo=section.required_sudo,
+                        )
+                    except (PermissionError, subprocess.CalledProcessError):
+                        inaccessible_paths.append(source)
+                        log(f"⚠ Cannot read {source}; permission denied.")
+
+                elif props.color:
+                    render_colored_diff(diff_lines)
+
+                else:
+                    print("".join(diff_lines))
+
+    if not changes_found and not inaccessible_paths:
+        log("✅ No differences detected.")

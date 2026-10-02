@@ -59,7 +59,8 @@ def remove(props: RemoverProps):
             log(f"❎ Profile '{profile}' does not exist locally.")
 
         # Delete remote branch if it exists
-        if is_remote_repo(repo=repo):
+        is_remote, _ = is_remote_repo(repo=repo)
+        if is_remote:
             if profile in remote_profiles:
                 if props.no_confirm:
                     delete_remote_branch(repo, profile)

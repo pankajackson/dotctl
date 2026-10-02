@@ -1,6 +1,7 @@
 import os
 import traceback
 import shutil
+from functools import wraps
 from pathlib import Path
 from datetime import datetime
 from dotctl.paths import app_home_directory
@@ -9,6 +10,7 @@ from .utils import log
 
 
 def exception_handler(func):
+    @wraps(func)
     def inner_func(*args, **kwargs):
         try:
             function = func(*args, **kwargs)
@@ -26,7 +28,7 @@ def exception_handler(func):
             log(
                 f"{__APP_NAME__}: {err}\nPlease check the log at {log_file} for more details."
             )
-            return None
+            raise SystemExit(1) from err
         else:
             return function
 

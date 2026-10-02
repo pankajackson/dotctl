@@ -4,7 +4,7 @@ services:
     build:
       context: .
       args:
-        RUNNER_VERSION: "2.322.0"
+        RUNNER_VERSION: ${RUNNER_VERSION:-2.329.0}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     # environment:

@@ -80,7 +80,10 @@ def get_parser() -> argparse.ArgumentParser:
         "profile",
         nargs="?",  # Makes positional argument optional
         type=str,
-        help="Target profile to save into (defaults to the active one if not provided)",
+        help=(
+            "Target profile to save into; new profiles copy the active profile. "
+            "The active profile is restored afterward. Defaults to the active profile."
+        ),
         default=None,
     )
 
@@ -283,6 +286,39 @@ def get_parser() -> argparse.ArgumentParser:
     # Pull Parser
     pull_parser = subparsers.add_parser(
         "pull", help="Pull the latest changes from the dotfiles repository"
+    )
+    # Diff Parser
+    diff_parser = subparsers.add_parser(
+        "diff", help="Diff the current dotfiles repository with the dotfiles repository"
+    )
+    diff_parser.add_argument(
+        "target",
+        nargs="?",
+        help="Specific file or directory to diff",
+    )
+    diff_parser.add_argument(
+        "--color",
+        action="store_true",
+        help="Use color in diff output",
+    )
+
+    diff_parser.add_argument(
+        "--side-by-side",
+        action="store_true",
+        help="Use side-by-side diff output",
+    )
+
+    # Status Parser
+    status_parser = subparsers.add_parser("status", help="Status of dotfiles")
+    status_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print status in JSON format",
+    )
+    status_parser.add_argument(
+        "--short",
+        action="store_true",
+        help="Print status in short format",
     )
 
     # Wipe Parser

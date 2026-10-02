@@ -15,7 +15,6 @@ from dotctl.handlers.git_handler import (
     get_repo,
     get_repo_branches,
     git_fetch,
-    create_branch,
     create_empty_branch,
     is_remote_repo,
     is_repo_changed,
@@ -55,17 +54,13 @@ def create(props: CreatorProps):
     if props.profile in all_profiles:
         log(f"❌ Profile '{props.profile}' already exists.")
         return
-    if props.env or props.config:
-        if props.config is not None and isinstance(props.config, str):
-            props.config = Path(props.config)
-        create_empty_branch(repo, props.profile)
-        conf_initializer(
-            env=props.env,
-            custom_config=props.config,
-        )
-        hooks_initializer()
-    else:
-        create_branch(repo, props.profile)
+
+    create_empty_branch(repo, props.profile)
+
+    if isinstance(props.config, str):
+        props.config = Path(props.config)
+    conf_initializer(env=props.env, custom_config=props.config)
+    hooks_initializer()
 
     add_changes(repo=repo)
     if is_repo_changed(repo=repo):
@@ -73,17 +68,14 @@ def create(props: CreatorProps):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         full_message = f"{hostname} | Profile Initialized | {timestamp}"
         commit_changes(repo=repo, message=full_message)
-        is_remote, _ = is_remote_repo(repo=repo)
-        _, remote_profiles, active_profile, all_profiles = get_repo_branches(repo)
-        if is_remote:
-            if props.profile not in remote_profiles:
-                git_fetch(repo=repo)
-                _, remote_profiles, active_profile, all_profiles = get_repo_branches(
-                    repo
-                )
-            if not props.profile in remote_profiles:
-                push_new_branch(repo=repo)
-            else:
-                push_existing_branch(repo=repo)
+
+    is_remote, _ = is_remote_repo(repo=repo)
+    if is_remote:
+        git_fetch(repo=repo)
+        _, remote_profiles, _, _ = get_repo_branches(repo)
+        if props.profile not in remote_profiles:
+            push_new_branch(repo=repo)
+        else:
+            push_existing_branch(repo=repo)
 
     log(f"✅ Profile '{props.profile}' created and activated successfully.")

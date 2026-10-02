@@ -16,7 +16,8 @@ license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = [
   "PyYAML",
-  "gitpython"
+  "gitpython",
+  "rich"
 ]
 
 keywords = [
@@ -34,6 +35,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
+    "Operating System :: MacOS",
     "Operating System :: POSIX :: Linux",
     "Topic :: System :: Archiving :: Backup",
     "Topic :: Utilities",

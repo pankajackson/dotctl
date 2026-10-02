@@ -40,19 +40,13 @@ def is_remote_repo(repo: Repo) -> tuple[bool, None] | tuple[bool, Remote]:
     if not repo.remotes:
         return False, None
     origin = next((remote for remote in repo.remotes if remote.name == "origin"), None)
-    if origin:
-        try:
-            origin.fetch(prune=True)
-            return True, origin
-        except Exception as e:
-            print(f"Warning: Unable to fetch from remote '{origin.url}'. Error: {e}")
-    return False, None
+    return (True, origin) if origin else (False, None)
 
 
 def git_fetch(repo: Repo) -> None:
     try:
-        is_remote, origin = is_remote_repo(repo)
-        if is_remote and origin:
+        _, origin = is_remote_repo(repo)
+        if origin:
             origin.fetch(prune=True)
     except Exception as e:
         log(f"Failed to fetch remote: {e}")

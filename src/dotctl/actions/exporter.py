@@ -92,7 +92,12 @@ def exporter(props: ExporterProps) -> None:
                 source = source_base_dir / entry
                 dest = dest_base_dir / entry
                 result = copy(
-                    source, dest, skip_sudo=props.skip_sudo, sudo_pass=props.password
+                    source,
+                    dest,
+                    skip_sudo=props.skip_sudo,
+                    sudo_pass=props.password,
+                    required_sudo=section.required_sudo,
+                    user_owned_destination=True,
                 )
 
                 # Update props based on the result
@@ -120,4 +125,10 @@ def exporter(props: ExporterProps) -> None:
             f"✅ Successfully exported to {export_profile_path.with_suffix(__EXPORT_EXTENSION__)}"
         )
     finally:
+        try:
+            if repo.active_branch.name != active_profile:
+                checkout_branch(repo, active_profile)
+                log(f"Switched back to profile: {active_profile}")
+        except Exception as error:
+            log(f"Failed to restore profile '{active_profile}': {error}")
         shutil.rmtree(export_profile_path, ignore_errors=True)
