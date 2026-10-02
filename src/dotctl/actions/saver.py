@@ -171,6 +171,7 @@ def _save_current_profile(
         commit_changes(repo=repo, message=full_message)
 
     pushed_new_profile = False
+    profile_exists_remotely = False
     is_remote, _ = is_remote_repo(repo=repo)
     if is_remote:
         git_fetch(repo=repo)
@@ -178,8 +179,10 @@ def _save_current_profile(
         if target_profile not in remote_profiles:
             push_new_branch(repo=repo)
             pushed_new_profile = True
-        elif has_changes:
-            push_existing_branch(repo=repo)
+        else:
+            profile_exists_remotely = True
+            if has_changes:
+                push_existing_branch(repo=repo)
 
     if skipped_paths:
         if pushed_new_profile:
@@ -192,5 +195,7 @@ def _save_current_profile(
         log("✅ Profile saved successfully!")
     elif pushed_new_profile:
         log("✅ New profile pushed to remote; no file changes detected.")
+    elif profile_exists_remotely:
+        log("ℹ️ No changes detected; profile already exists on remote.")
     else:
         log("ℹ️ No changes detected!")
