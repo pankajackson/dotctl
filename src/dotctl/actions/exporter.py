@@ -6,6 +6,7 @@ from dotctl.utils import log
 from dotctl.handlers.data_handler import copy
 from dotctl.paths import app_profile_directory, app_config_file, home_path
 from dotctl.handlers.config_handler import conf_reader
+from dotctl.handlers.config_handler import is_ignored, patterns_for_entry
 from dotctl.handlers.git_handler import (
     get_repo,
     get_repo_branches,
@@ -89,6 +90,8 @@ def exporter(props: ExporterProps) -> None:
 
             log(f'Exporting "{name}"...')
             for entry in section.entries:
+                if is_ignored(entry, section.ignore_patterns):
+                    continue
                 source = source_base_dir / entry
                 dest = dest_base_dir / entry
                 result = copy(
@@ -98,6 +101,7 @@ def exporter(props: ExporterProps) -> None:
                     sudo_pass=props.password,
                     required_sudo=section.required_sudo,
                     user_owned_destination=True,
+                    ignore_patterns=patterns_for_entry(entry, section.ignore_patterns),
                 )
 
                 # Update props based on the result

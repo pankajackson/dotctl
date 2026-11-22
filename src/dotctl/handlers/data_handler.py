@@ -17,10 +17,11 @@ def rsync(
     sudo_pass: str | None = None,
     is_dir: bool = False,
     user_owned_destination: bool = False,
+    ignore_patterns: list[str] | None = None,
 ):
     """Synchronizes source to destination using rsync with optional sudo support."""
     rsync_command = "rsync"
-    exclude_patterns = ["*.pyc", "*.pyo", ".git"]
+    exclude_patterns = ["*.pyc", "*.pyo", ".git", *(ignore_patterns or [])]
     exclude_options = [f"--exclude={pattern}" for pattern in exclude_patterns]
     rsync_options = ["-az", "--delete"]
 
@@ -112,6 +113,7 @@ def copy(
     required_sudo: bool = False,
     user_owned_destination: bool = False,
     skipped_paths: list[Path] | None = None,
+    ignore_patterns: list[str] | None = None,
 ):
     """Copies files/directories using rsync and handles sudo permission issues."""
     temp_pass = None
@@ -215,6 +217,7 @@ def copy(
                 sudo_credential(temp_pass, sudo_pass),
                 is_dir=is_dir,
                 user_owned_destination=user_owned_destination,
+                ignore_patterns=ignore_patterns,
             )
         except PermissionError:
             if not skip_sudo:
@@ -227,6 +230,7 @@ def copy(
                         credential,
                         is_dir=is_dir,
                         user_owned_destination=user_owned_destination,
+                        ignore_patterns=ignore_patterns,
                     )
                 else:
                     log(

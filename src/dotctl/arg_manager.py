@@ -320,6 +320,11 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print status in short format",
     )
+    status_parser.add_argument(
+        "--long",
+        action="store_true",
+        help="List affected files for each changed entry",
+    )
 
     # Wipe Parser
     wipe_parser = subparsers.add_parser("wipe", help="Wipe Profiles")
