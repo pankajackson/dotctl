@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.1.1 - 2026-11-23
+
+**Features**:
+
+- Added configurable ignore patterns to exclude files and directories from profile operations
+- Integrated ignore pattern handling across all relevant actions
+- Added changed file list to status output
+
+**Improvements**:
+
+- Updated supported Python version requirements
+
+---
+
 ## v1.1.0 - 2026-10-02
 
 **Features**:
@@ -22,6 +36,8 @@
 
 - Clarified save results when entries are skipped or a profile has no changes
 - Improved human-readable status, diff, and profile synchronization messages
+
+---
 
 ## v1.0.9 - 2025-06-25
 
