@@ -5,7 +5,11 @@ from pathlib import Path
 from dotctl.utils import log
 from dotctl.handlers.data_handler import copy, delete
 from dotctl.paths import app_profile_directory, app_config_file
-from dotctl.handlers.config_handler import conf_reader
+from dotctl.handlers.config_handler import (
+    conf_reader,
+    is_ignored,
+    patterns_for_entry,
+)
 from dotctl.handlers.git_handler import (
     get_repo,
     get_repo_branches,
@@ -85,6 +89,8 @@ def _save_current_profile(
         dest_base_dir.mkdir(exist_ok=True)
         log(f'Saving "{name}"...')
         for entry in section.entries:
+            if is_ignored(entry, section.ignore_patterns):
+                continue
             source = source_base_dir / entry
             dest = dest_base_dir / entry
             result = copy(
@@ -96,6 +102,7 @@ def _save_current_profile(
                 required_sudo=section.required_sudo,
                 user_owned_destination=True,
                 skipped_paths=skipped_paths,
+                ignore_patterns=patterns_for_entry(entry, section.ignore_patterns),
             )
 
             # Updated props
@@ -139,6 +146,8 @@ def _save_current_profile(
                 )
                 for candidate in candidates:
                     relative_path = candidate.relative_to(dot)
+                    if is_ignored(relative_path, section.ignore_patterns):
+                        continue
                     keep = any(
                         relative_path == configured
                         or relative_path in configured.parents

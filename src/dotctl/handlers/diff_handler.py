@@ -9,12 +9,18 @@ from dotctl.handlers.sudo_handler import (
     path_exists,
     read_path_text,
 )
+from dotctl.handlers.config_handler import is_ignored
 
 console = Console()
 
 
 def get_file_diff(
-    source: Path, dest: Path, *, required_sudo: bool = False
+    source: Path,
+    dest: Path,
+    *,
+    required_sudo: bool = False,
+    ignore_patterns: list[str] | None = None,
+    ignore_base: Path = Path(),
 ) -> list[str] | None:
     if not _path_exists(source, required_sudo=required_sudo) and not _path_exists(dest):
         return None
@@ -25,8 +31,15 @@ def get_file_diff(
     # Configured entries may be directories. Compare their files by relative
     # path so additions and removals are reported as well as content changes.
     if is_directory(source, required_sudo=required_sudo) or is_directory(dest):
-        source_files = _directory_files(source, required_sudo=required_sudo)
-        dest_files = _directory_files(dest)
+        source_files = _directory_files(
+            source,
+            required_sudo=required_sudo,
+            ignore_patterns=ignore_patterns,
+            ignore_base=ignore_base,
+        )
+        dest_files = _directory_files(
+            dest, ignore_patterns=ignore_patterns, ignore_base=ignore_base
+        )
         diffs: list[str] = []
         for relative_path in sorted(source_files.keys() | dest_files.keys()):
             source_file = (
@@ -52,14 +65,63 @@ def get_file_diff(
 
 
 def _directory_files(
-    directory: Path, *, required_sudo: bool = False
+    directory: Path,
+    *,
+    required_sudo: bool = False,
+    ignore_patterns: list[str] | None = None,
+    ignore_base: Path = Path(),
 ) -> dict[Path, Path]:
     if not is_directory(directory, required_sudo=required_sudo):
         return {}
     return {
         path.relative_to(directory): path
         for path in list_path_files(directory, required_sudo=required_sudo)
+        if not is_ignored(
+            path.relative_to(directory), ignore_patterns or [], base_path=ignore_base
+        )
     }
+
+
+def get_changed_file_paths(
+    source: Path,
+    dest: Path,
+    entry: str,
+    *,
+    required_sudo: bool = False,
+    ignore_patterns: list[str] | None = None,
+    ignore_base: Path = Path(),
+) -> list[str]:
+    """Return changed file names relative to a configured entry."""
+    if is_symlink(source, required_sudo=required_sudo) or is_symlink(dest):
+        return [entry] if _get_single_file_diff(
+            source, dest, required_sudo=required_sudo
+        ) else []
+
+    if is_directory(source, required_sudo=required_sudo) or is_directory(dest):
+        source_files = _directory_files(
+            source,
+            required_sudo=required_sudo,
+            ignore_patterns=ignore_patterns,
+            ignore_base=ignore_base,
+        )
+        dest_files = _directory_files(
+            dest, ignore_patterns=ignore_patterns, ignore_base=ignore_base
+        )
+        changed = []
+        for relative_path in sorted(source_files.keys() | dest_files.keys()):
+            source_file = source_files.get(relative_path, source / relative_path)
+            dest_file = dest_files.get(relative_path, dest / relative_path)
+            if _get_single_file_diff(
+                source_file,
+                dest_file,
+                required_sudo=required_sudo and source_file in source_files.values(),
+            ):
+                changed.append(relative_path.as_posix())
+        return changed
+
+    return [entry] if _get_single_file_diff(
+        source, dest, required_sudo=required_sudo
+    ) else []
 
 
 def _path_exists(path: Path, *, required_sudo: bool = False) -> bool:
@@ -155,11 +217,25 @@ def render_colored_diff(lines: list[str]) -> None:
             console.print(line)
 
 
-def render_side_by_side(source, dest, *, required_sudo: bool = False):
+def render_side_by_side(
+    source,
+    dest,
+    *,
+    required_sudo: bool = False,
+    ignore_patterns: list[str] | None = None,
+    ignore_base: Path = Path(),
+):
 
     if is_directory(source, required_sudo=required_sudo) or is_directory(dest):
-        source_files = _directory_files(source, required_sudo=required_sudo)
-        dest_files = _directory_files(dest)
+        source_files = _directory_files(
+            source,
+            required_sudo=required_sudo,
+            ignore_patterns=ignore_patterns,
+            ignore_base=ignore_base,
+        )
+        dest_files = _directory_files(
+            dest, ignore_patterns=ignore_patterns, ignore_base=ignore_base
+        )
         for relative_path in sorted(source_files.keys() | dest_files.keys()):
             source_file = (
                 source_files[relative_path]
@@ -175,18 +251,21 @@ def render_side_by_side(source, dest, *, required_sudo: bool = False):
                 source_file,
                 dest_file,
                 required_sudo=required_sudo and source_file in source_files.values(),
+                ignore_patterns=ignore_patterns,
+                ignore_base=ignore_base,
             ):
                 console.print(f"\n{relative_path}", style="bold")
                 render_side_by_side(
                     source_file,
                     dest_file,
-                required_sudo=required_sudo and source_file in source_files.values(),
+                    required_sudo=required_sudo
+                    and source_file in source_files.values(),
+                    ignore_patterns=ignore_patterns,
+                    ignore_base=ignore_base,
                 )
         return
 
-    source_lines = _read_lines(
-        source, keepends=False, required_sudo=required_sudo
-    )
+    source_lines = _read_lines(source, keepends=False, required_sudo=required_sudo)
     dest_lines = _read_lines(dest, keepends=False)
 
     matcher = SequenceMatcher(None, dest_lines, source_lines)

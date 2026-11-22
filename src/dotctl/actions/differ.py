@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 from dotctl.paths import app_profile_directory, app_config_file
-from dotctl.handlers.config_handler import conf_reader
+from dotctl.handlers.config_handler import conf_reader, is_ignored
 from dotctl.handlers.diff_handler import (
     get_file_diff,
     render_side_by_side,
@@ -52,6 +52,8 @@ def diff(props: DiffProps) -> None:
         repo_base_dir = props.profile_dir / name
 
         for entry in section.entries:
+            if is_ignored(entry, section.ignore_patterns):
+                continue
 
             source_root = source_base_dir / entry
             repo_root = repo_base_dir / entry
@@ -66,17 +68,33 @@ def diff(props: DiffProps) -> None:
                     continue
                 resolved_source = source_root.resolve()
                 resolved_repo = repo_root.resolve()
-                if target_path != resolved_source and resolved_source in target_path.parents:
+                if (
+                    target_path != resolved_source
+                    and resolved_source in target_path.parents
+                ):
                     relative_target = target_path.relative_to(resolved_source)
                     source = source_root / relative_target
                     repo_file = repo_root / relative_target
-                elif target_path != resolved_repo and resolved_repo in target_path.parents:
+                elif (
+                    target_path != resolved_repo
+                    and resolved_repo in target_path.parents
+                ):
                     relative_target = target_path.relative_to(resolved_repo)
                     source = source_root / relative_target
                     repo_file = repo_root / relative_target
+            if source != source_root and is_ignored(
+                source.relative_to(source_root),
+                section.ignore_patterns,
+                base_path=Path(entry),
+            ):
+                continue
             try:
                 diff_lines = get_file_diff(
-                    source, repo_file, required_sudo=section.required_sudo
+                    source,
+                    repo_file,
+                    required_sudo=section.required_sudo,
+                    ignore_patterns=section.ignore_patterns,
+                    ignore_base=Path(entry),
                 )
             except (PermissionError, subprocess.CalledProcessError):
                 inaccessible_paths.append(source)
@@ -93,6 +111,8 @@ def diff(props: DiffProps) -> None:
                             source,
                             repo_file,
                             required_sudo=section.required_sudo,
+                            ignore_patterns=section.ignore_patterns,
+                            ignore_base=Path(entry),
                         )
                     except (PermissionError, subprocess.CalledProcessError):
                         inaccessible_paths.append(source)

@@ -163,7 +163,7 @@ class DotCtl:
 
     def show_status(self):
         """Show status of dotfiles."""
-        props = self._build_props(status_default_props, "json", "short")
+        props = self._build_props(status_default_props, "json", "short", "long")
         status(props)
 
 
@@ -221,6 +221,7 @@ def main():
         "target": getattr(args, "target", None),
         "json": getattr(args, "json", None),
         "short": getattr(args, "short", None),
+        "long": getattr(args, "long", None),
     }
 
     dot_ctl_obj = DotCtl(**common_args)
