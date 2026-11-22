@@ -99,6 +99,10 @@ Each `save` or `export` section may set `required_sudo: true` when its configure
 location should be accessed through sudo. If `sudo` is omitted or `false`,
 dotctl first uses normal access and asks for sudo only if the path is restricted.
 At the prompt, you can provide a password or skip the current path/all paths.
+Sections may also set `ignore_patterns` to exclude matching paths from save,
+apply, export, import, status, and diff operations. Patterns use Python's
+`fnmatch` syntax and are matched against paths relative to the section's
+`location`; matching directories exclude their contents too.
 
 ---
 
@@ -110,6 +114,10 @@ save:
     location: $HOME
     entries:
       - test.txt
+    ignore_patterns:
+      - "*.pdf"
+      - "somedir/*.jpg"
+      - "logs/apache_web_*.log"
 
 export:
   share_folder:
@@ -295,14 +303,16 @@ This diagram shows the typical lifecycle of using a `dotctl` profile, from savin
 
 ## 📊 Profile Block Table
 
-| Section  | Field           | Description                                                       |
-| -------- | --------------- | ----------------------------------------------------------------- |
-| `save`   | `location`      | Base path of tracked files (can use a key like `$CONFIG_DIR`)     |
-|          | `entries`       | Files/folders to track under that location                        |
-|          | `required_sudo` | Whether restricted paths in this section require sudo             |
-| `export` | `location`      | Base path of export files (e.g., large assets not suited for Git) |
-|          | `entries`       | Assets or binaries to package in `.dtsv`                           |
-|          | `required_sudo` | Whether restricted paths in this section require sudo             |
+| Section  | Field             | Description                                                       |
+| -------- | ----------------- | ----------------------------------------------------------------- |
+| `save`   | `location`        | Base path of tracked files (can use a key like `$CONFIG_DIR`)     |
+|          | `entries`         | Files/folders to track under that location                        |
+|          | `required_sudo`   | Whether restricted paths in this section require sudo             |
+|          | `ignore_patterns` | fnmatch patterns excluded from every operation on the section     |
+| `export` | `location`        | Base path of export files (e.g., large assets not suited for Git) |
+|          | `entries`         | Assets or binaries to package in `.dtsv`                          |
+|          | `required_sudo`   | Whether restricted paths in this section require sudo             |
+|          | `ignore_patterns` | fnmatch patterns excluded from every operation on the section     |
 
 ---
 
@@ -310,7 +320,7 @@ This diagram shows the typical lifecycle of using a `dotctl` profile, from savin
 
 | Action          | Command                | Description                                                 |
 | --------------- | ---------------------- | ----------------------------------------------------------- |
-| Save configs    | `dotctl save`          | Saves configured files to the active profile and syncs Git   |
+| Save configs    | `dotctl save`          | Saves configured files to the active profile and syncs Git  |
 | Export assets   | `dotctl export`        | Package large, non-Git assets into `.dtsv` file             |
 | Transfer assets | `scp profile.dtsv ...` | Manually copy to another machine                            |
 | Import assets   | `dotctl import`        | Unpack `.dtsv` on another system                            |
