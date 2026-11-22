@@ -58,8 +58,6 @@ def patterns_for_entry(entry: str | Path, patterns: list[str]) -> list[str]:
             relative_patterns.append(Path(*pattern_parts[len(entry_parts) :]).as_posix())
         else:
             relative_patterns.append(pattern)
-    print("#################### patterns for entry ########################")
-    print(relative_patterns)
     return relative_patterns
 
 
