@@ -4,6 +4,7 @@ from dotctl.utils import log
 from dotctl.handlers.data_handler import copy
 from dotctl.paths import app_profile_directory, app_config_file
 from dotctl.handlers.config_handler import conf_reader
+from dotctl.handlers.config_handler import is_ignored, patterns_for_entry
 from dotctl.handlers.hooks_handler import run_hooks
 from dotctl.handlers.git_handler import (
     get_repo,
@@ -74,6 +75,8 @@ def apply(props: ActivatorProps) -> None:
         dest_base_dir = Path(section.location)
         log(f'Applying "{name}"...')
         for entry in section.entries:
+            if is_ignored(entry, section.ignore_patterns):
+                continue
             source = source_base_dir / entry
             dest = dest_base_dir / entry
             result = copy(
@@ -82,6 +85,7 @@ def apply(props: ActivatorProps) -> None:
                 skip_sudo=props.skip_sudo,
                 sudo_pass=props.password,
                 required_sudo=section.required_sudo,
+                ignore_patterns=patterns_for_entry(entry, section.ignore_patterns),
             )
 
             # Updated props

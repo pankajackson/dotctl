@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 
 from dotctl.handlers.config_handler import Config
+from dotctl.handlers.config_handler import is_ignored
 from dotctl.handlers.diff_handler import get_file_diff
 from dotctl.handlers.sudo_handler import path_exists
 
@@ -108,7 +109,9 @@ class DriftReport:
 
 
 def get_file_state(
-    source: Path, repo_file: Path, *, required_sudo: bool = False
+    source: Path, repo_file: Path, *, required_sudo: bool = False,
+    ignore_patterns: list[str] | None = None,
+    ignore_base: Path = Path(),
 ) -> FileState:
     source_exists = _path_presence(source, required_sudo=required_sudo)
     repo_exists = _path_presence(repo_file)
@@ -126,7 +129,13 @@ def get_file_state(
         return FileState.NOT_PRESENT
 
     try:
-        diff = get_file_diff(source, repo_file, required_sudo=required_sudo)
+        diff = get_file_diff(
+            source,
+            repo_file,
+            required_sudo=required_sudo,
+            ignore_patterns=ignore_patterns,
+            ignore_base=ignore_base,
+        )
     except (PermissionError, subprocess.CalledProcessError):
         return FileState.INACCESSIBLE
 
@@ -158,11 +167,16 @@ def build_drift_report(profile_dir: Path, config: Config) -> DriftReport:
 
         for entry in section.entries:
 
+            if is_ignored(entry, section.ignore_patterns):
+                continue
+
             source = Path(section.location) / entry
             repo_file = profile_dir / name / entry
 
             state = get_file_state(
-                source, repo_file, required_sudo=section.required_sudo
+                source, repo_file, required_sudo=section.required_sudo,
+                ignore_patterns=section.ignore_patterns,
+                ignore_base=Path(entry),
             )
 
             results.append(

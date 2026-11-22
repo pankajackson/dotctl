@@ -2,7 +2,8 @@ import os
 import yaml
 import re
 import shutil
-from dataclasses import dataclass
+import fnmatch
+from dataclasses import dataclass, field
 from pathlib import Path
 from dotctl import __BASE_DIR__
 from dotctl.paths import (
@@ -23,6 +24,45 @@ class EntryConfig:
     entries: list[str]
     location: str
     required_sudo: bool = False
+    ignore_patterns: list[str] = field(default_factory=list)
+
+
+def is_ignored(
+    path: str | Path,
+    patterns: list[str],
+    *,
+    base_path: str | Path = Path(),
+) -> bool:
+    """Match a path relative to the section location, including ignored dirs."""
+    if not patterns:
+        return False
+    path = Path(base_path) / path
+    parts = path.parts
+    print(f"####### Ignore Check Executed for {path} #############")
+    print(path, base_path, parts)
+    return any(
+        fnmatch.fnmatch(path.as_posix(), pattern)
+        or any(fnmatch.fnmatch(Path(*parts[:i]).as_posix(), pattern) for i in range(1, len(parts)))
+        for pattern in patterns
+    )
+
+
+def patterns_for_entry(entry: str | Path, patterns: list[str]) -> list[str]:
+    """Translate section-relative patterns for rsync's entry-relative paths."""
+    entry_parts = Path(entry).parts
+    relative_patterns = []
+    for pattern in patterns:
+        pattern_parts = Path(pattern).parts
+        if len(pattern_parts) > len(entry_parts) and all(
+            fnmatch.fnmatch(entry_part, pattern_part)
+            for entry_part, pattern_part in zip(entry_parts, pattern_parts)
+        ):
+            relative_patterns.append(Path(*pattern_parts[len(entry_parts) :]).as_posix())
+        else:
+            relative_patterns.append(pattern)
+    print("#################### patterns for entry ########################")
+    print(relative_patterns)
+    return relative_patterns
 
 
 @dataclass
@@ -96,11 +136,21 @@ def conf_reader(config_file: Path = Path(app_config_file)) -> Config:
             raise ValueError(
                 f"Config section '{name}'.entries must be a list of paths."
             )
+        ignore_patterns = values.get("ignore_patterns", [])
+        if not isinstance(ignore_patterns, list) or not all(
+            isinstance(pattern, str) for pattern in ignore_patterns
+        ):
+            raise ValueError(
+                f"Config section '{name}'.ignore_patterns must be a list of patterns."
+            )
         location = values.get("location")
         if not isinstance(location, str):
             raise ValueError(f"Config section '{name}'.location must be a path.")
         return EntryConfig(
-            entries=entries, location=location, required_sudo=required_sudo
+            entries=entries,
+            location=location,
+            required_sudo=required_sudo,
+            ignore_patterns=ignore_patterns,
         )
 
     return Config(
