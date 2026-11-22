@@ -561,7 +561,7 @@ dotctl pull
 Inspect the current profile health and detect configuration drift between the repository and local system.
 
 ```sh
-dotctl status [--json] [--short]
+dotctl status [--json] [--short] [--long]
 ```
 
 **Examples:**
@@ -570,7 +570,12 @@ dotctl status [--json] [--short]
 dotctl status
 dotctl status --short
 dotctl status --json
+dotctl status --long
 ```
+
+`--long` lists the affected files beneath each changed entry. JSON status
+includes a `files` array on each entry; for directory entries its paths are
+relative to that configured entry.
 
 ---
 

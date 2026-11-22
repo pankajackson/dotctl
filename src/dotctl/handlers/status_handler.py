@@ -5,7 +5,7 @@ import subprocess
 
 from dotctl.handlers.config_handler import Config
 from dotctl.handlers.config_handler import is_ignored
-from dotctl.handlers.diff_handler import get_file_diff
+from dotctl.handlers.diff_handler import get_file_diff, get_changed_file_paths
 from dotctl.handlers.sudo_handler import path_exists
 
 
@@ -78,6 +78,7 @@ class StatusEntry:
     entry: str
     state: FileState
     path: Path
+    files: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -178,6 +179,23 @@ def build_drift_report(profile_dir: Path, config: Config) -> DriftReport:
                 ignore_patterns=section.ignore_patterns,
                 ignore_base=Path(entry),
             )
+            changed_files = []
+            if state in (
+                FileState.MODIFIED,
+                FileState.MISSING_SOURCE,
+                FileState.MISSING_PROFILE,
+            ):
+                try:
+                    changed_files = get_changed_file_paths(
+                        source,
+                        repo_file,
+                        entry,
+                        required_sudo=section.required_sudo,
+                        ignore_patterns=section.ignore_patterns,
+                        ignore_base=Path(entry),
+                    )
+                except (PermissionError, subprocess.CalledProcessError):
+                    pass
 
             results.append(
                 StatusEntry(
@@ -185,6 +203,7 @@ def build_drift_report(profile_dir: Path, config: Config) -> DriftReport:
                     entry=entry,
                     path=source,
                     state=state,
+                    files=changed_files,
                 )
             )
 

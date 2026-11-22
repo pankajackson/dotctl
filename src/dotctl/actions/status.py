@@ -69,16 +69,18 @@ class StatusProps:
     profile_dir: Path
     json: bool
     short: bool
+    long: bool
 
 
 status_default_props = StatusProps(
     profile_dir=Path(app_profile_directory),
     json=False,
     short=False,
+    long=False,
 )
 
 
-def render_full(report: StatusReport):
+def render_full(report: StatusReport, *, long: bool = False):
 
     profile = report.profile
     config = report.config
@@ -129,11 +131,7 @@ def render_full(report: StatusReport):
 
     print(f"ℹ not present at either location: {len(drift.not_present_files)}")
 
-    changed = (
-        drift.modified_files
-        + drift.missing_files
-        + drift.inaccessible_files
-    )
+    changed = drift.modified_files + drift.missing_files + drift.inaccessible_files
 
     if changed:
 
@@ -143,6 +141,9 @@ def render_full(report: StatusReport):
 
         for f in changed:
             print(f"  - {f.path}")
+            if long:
+                for path in f.files:
+                    print(f"      {path}")
 
         print()
 
@@ -208,6 +209,7 @@ def render_json(report: StatusReport):
             "entry": f.entry,
             "path": str(f.path),
             "state": f.state.value,
+            "files": f.files,
         }
 
     output = {
@@ -238,12 +240,8 @@ def render_json(report: StatusReport):
             "modified_files": [encode_file(f) for f in drift.modified_files],
             "missing_files": [encode_file(f) for f in drift.missing_files],
             "synced_files": [encode_file(f) for f in drift.synced_files],
-            "not_present_files": [
-                encode_file(f) for f in drift.not_present_files
-            ],
-            "inaccessible_files": [
-                encode_file(f) for f in drift.inaccessible_files
-            ],
+            "not_present_files": [encode_file(f) for f in drift.not_present_files],
+            "inaccessible_files": [encode_file(f) for f in drift.inaccessible_files],
         }
 
     print(json.dumps(output, indent=2))
@@ -439,4 +437,4 @@ def status(props: StatusProps) -> None:
         render_short(report)
     else:
         log("Fetching status...")
-        render_full(report)
+        render_full(report, long=props.long)

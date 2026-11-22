@@ -38,8 +38,6 @@ def is_ignored(
         return False
     path = Path(base_path) / path
     parts = path.parts
-    print(f"####### Ignore Check Executed for {path} #############")
-    print(path, base_path, parts)
     return any(
         fnmatch.fnmatch(path.as_posix(), pattern)
         or any(fnmatch.fnmatch(Path(*parts[:i]).as_posix(), pattern) for i in range(1, len(parts)))

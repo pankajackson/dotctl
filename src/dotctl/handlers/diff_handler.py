@@ -82,6 +82,48 @@ def _directory_files(
     }
 
 
+def get_changed_file_paths(
+    source: Path,
+    dest: Path,
+    entry: str,
+    *,
+    required_sudo: bool = False,
+    ignore_patterns: list[str] | None = None,
+    ignore_base: Path = Path(),
+) -> list[str]:
+    """Return changed file names relative to a configured entry."""
+    if is_symlink(source, required_sudo=required_sudo) or is_symlink(dest):
+        return [entry] if _get_single_file_diff(
+            source, dest, required_sudo=required_sudo
+        ) else []
+
+    if is_directory(source, required_sudo=required_sudo) or is_directory(dest):
+        source_files = _directory_files(
+            source,
+            required_sudo=required_sudo,
+            ignore_patterns=ignore_patterns,
+            ignore_base=ignore_base,
+        )
+        dest_files = _directory_files(
+            dest, ignore_patterns=ignore_patterns, ignore_base=ignore_base
+        )
+        changed = []
+        for relative_path in sorted(source_files.keys() | dest_files.keys()):
+            source_file = source_files.get(relative_path, source / relative_path)
+            dest_file = dest_files.get(relative_path, dest / relative_path)
+            if _get_single_file_diff(
+                source_file,
+                dest_file,
+                required_sudo=required_sudo and source_file in source_files.values(),
+            ):
+                changed.append(relative_path.as_posix())
+        return changed
+
+    return [entry] if _get_single_file_diff(
+        source, dest, required_sudo=required_sudo
+    ) else []
+
+
 def _path_exists(path: Path, *, required_sudo: bool = False) -> bool:
     try:
         path.lstat()
