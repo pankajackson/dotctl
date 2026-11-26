@@ -34,6 +34,8 @@ def run_command(command: list[str], sudo_pass: str | None = None):
             input=stdin,
             check=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             capture_output=True,
         )
         return True, result.stdout, result.returncode
