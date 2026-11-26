@@ -1,5 +1,5 @@
 services:
-  runner:
+  runner-dotctl:
     image: github-runner-docker-local:latest
     build:
       context: .
